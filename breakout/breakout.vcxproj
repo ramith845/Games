@@ -73,28 +73,28 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\inter\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)vendor\GLFW\lib;$(LibraryPath)</LibraryPath>
     <ExternalIncludePath>$(SolutionDir)vendor\stbi;$(SolutionDir)vendor\glm;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\inter\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)vendor\GLFW\lib;$(LibraryPath)</LibraryPath>
     <ExternalIncludePath>$(SolutionDir)vendor\stbi;$(SolutionDir)vendor\glm;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\inter\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)vendor\GLFW\lib;$(LibraryPath)</LibraryPath>
     <ExternalIncludePath>$(SolutionDir)vendor\stbi;$(SolutionDir)vendor\glm;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\inter\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\;$(SolutionDir)vendor\glad;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)vendor\GLFW\lib;$(LibraryPath)</LibraryPath>
     <ExternalIncludePath>$(SolutionDir)vendor\stbi;$(SolutionDir)vendor\glm;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
@@ -183,16 +183,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GameLevel.cpp" />
-    <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="glad.c">
+    <ClCompile Include="core\Game.cpp" />
+    <ClCompile Include="level\GameLevel.cpp" />
+    <ClCompile Include="object\GameObject.cpp" />
+    <ClCompile Include="core\glad.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="misc\LevelTester.cpp" />
+    <ClCompile Include="core\main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
@@ -203,29 +204,39 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="ResourceManager.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="SpriteRenderer.cpp" />
-    <ClCompile Include="stb_image_impl.cpp">
+    <ClCompile Include="manager\ResourceManager.cpp" />
+    <ClCompile Include="renderer\Shader.cpp" />
+    <ClCompile Include="renderer\SpriteRenderer.cpp" />
+    <ClCompile Include="impl\stb_image_impl.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="renderer\Texture.cpp" />
+    <ClCompile Include="core\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="GameLevel.h" />
-    <ClInclude Include="GameObject.h" />
+    <ClInclude Include="event\Event.h" />
+    <ClInclude Include="core\Game.h" />
+    <ClInclude Include="level\GameLevel.h" />
+    <ClInclude Include="object\GameObject.h" />
+    <ClInclude Include="event\KeyEvent.h" />
+    <ClInclude Include="misc\LevelTester.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Random.h" />
-    <ClInclude Include="ResourceManager.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="SpriteRenderer.h" />
-    <ClInclude Include="Texture.h" />
+    <ClInclude Include="utils\Random.h" />
+    <ClInclude Include="manager\ResourceManager.h" />
+    <ClInclude Include="renderer\Shader.h" />
+    <ClInclude Include="renderer\SpriteRenderer.h" />
+    <ClInclude Include="renderer\Texture.h" />
+    <ClInclude Include="utils\Utility.h" />
+    <ClInclude Include="core\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="levels\four.lvl" />
+    <None Include="levels\one.lvl" />
+    <None Include="levels\three.lvl" />
+    <None Include="levels\two.lvl" />
     <None Include="shaders\3.3.shader.vert" />
     <None Include="shaders\3.3.shader.frag" />
   </ItemGroup>

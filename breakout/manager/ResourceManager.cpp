@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ResourceManager.h"
+#include "renderer/Texture.h"
 #include <stb_image.h>
 
 
@@ -11,6 +12,7 @@ Texture2D* ResourceManager::LoadTexture(std::string path, std::string name)
 	bool expression{ ExtensionCheck(path, ".png") || ExtensionCheck(path, ".jpg") || ExtensionCheck(path, ".jpeg") };
 #endif // _DEBUG
 	assert(expression && "Wrong extension for vertex shader");
+	assert(std::filesystem::exists(path) && "file doesn't exist");
 	s_Textures[name] = LoadTextureFromFile(path.c_str());
 	return s_Textures[name];
 }
@@ -31,7 +33,7 @@ Texture2D* ResourceManager::LoadTextureFromFile(const char* path)
 	else
 	{
 		texture = nullptr;
-		std::cout << "Failed to load texture" << std::endl;
+		std::cerr << "Failed to load texture " << path << std::endl;
 	}
 	stbi_image_free(data);
 	return texture;
@@ -114,4 +116,19 @@ Shader* ResourceManager::GetShader(std::string name)
 	}
 
 	return shader;
+}
+
+void ResourceManager::Cleanup()
+{
+	std::print("[ResourceManager] Cleaning and deleting resources...\n");
+	ITERATE_MAP_ERASE(s_Shaders)
+	{
+		delete it->second;
+	}
+
+	ITERATE_MAP_ERASE(s_Textures)
+	{
+		delete it->second;
+	}
+	std::print("[ResourceManager] Cleaned up.\n");
 }

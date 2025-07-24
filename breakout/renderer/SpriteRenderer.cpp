@@ -7,7 +7,15 @@ SpriteRenderer::SpriteRenderer(Shader* shader)
 	Init();
 }
 
-SpriteRenderer::~SpriteRenderer() {}
+SpriteRenderer::~SpriteRenderer() 
+{
+	std::println("[SpriteRenderer] Cleaning and deleting resources...");
+	std::println("	- deleting vertex buffer: {}", m_VBO);
+	glDeleteBuffers(1, &m_VBO);
+	std::println("	- deleting vertex array: {}", m_VAO);
+	glDeleteVertexArrays(1, &m_VAO);
+	std::println("[SpriteRenderer] Cleaned up.");
+}
 
 void SpriteRenderer::Init()
 {
@@ -37,7 +45,7 @@ void SpriteRenderer::Init()
 	glBindVertexArray(0);
 }
 
-void SpriteRenderer::Draw(const Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color)
+void SpriteRenderer::Draw(Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color)
 {
 	m_Shader->use();
 

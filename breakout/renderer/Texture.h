@@ -1,5 +1,4 @@
 #pragma once
-
 #include "glad/glad.h"
 
 class Texture2D
@@ -15,11 +14,11 @@ public:
 		unsigned int minFilter = GL_NEAREST,
 		unsigned int maxFilter = GL_LINEAR);
 
-	~Texture2D()
-	{
+	Texture2D() = delete;
+	~Texture2D();
 
-	}
 
+	unsigned int GetID() const;
 	void Generate(int width, int height, const unsigned char* data);
 	void TextureMipMap();
 	void Bind() const;

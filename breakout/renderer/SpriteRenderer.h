@@ -10,7 +10,7 @@ public:
 
 	void Init();
 
-	void Draw(const Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color);
+	void Draw(Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color);
 private:
 	unsigned int m_VAO{}, m_VBO{};
 	Shader* m_Shader;

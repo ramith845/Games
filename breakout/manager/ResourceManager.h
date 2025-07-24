@@ -1,6 +1,6 @@
 #pragma once
-#include "Shader.h"
-#include "Texture.h"
+#include "renderer/Shader.h"
+#include "renderer/Texture.h"
 #include <string>
 #include <string_view>
 #include <map>
@@ -12,6 +12,7 @@ public:
 	static Texture2D* LoadTexture(std::string path, std::string name);
 	static Shader* GetShader(std::string name);
 	static Texture2D* GetTexture(std::string name);
+	static void Cleanup();
 private:
 	static bool ExtensionCheck(std::string_view str, const std::string checkStr);
 	static Shader* LoadShaderFromFile(const char* vPath, const char* fPath);

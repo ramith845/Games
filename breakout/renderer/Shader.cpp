@@ -8,7 +8,10 @@ Shader::Shader()
 
 Shader::~Shader()
 {
+	std::println("[Shader] Cleaning and deleting resources...");
+	std::println("	- deleting shader: {}", m_ID);
 	glDeleteProgram(m_ID);
+	std::println("[Shader] Cleaned up.");
 }
 
 bool Shader::Compile(const char* vertexCodeSrc, const char* fragmentCodeSrc, const char* geometryShaderSrc)
