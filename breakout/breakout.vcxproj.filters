@@ -60,6 +60,18 @@
     <ClCompile Include="core\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="object\BallObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="object\ParticleGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\PostProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="object\PowerUp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\Game.h">
@@ -104,6 +116,24 @@
     <ClInclude Include="core\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="object\BallObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="event\WindowEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="object\Particle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="object\ParticleGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\PostProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="object\PowerUp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\3.3.shader.vert" />
@@ -120,5 +150,29 @@
     <None Include="levels\two.lvl">
       <Filter>Levels</Filter>
     </None>
+    <None Include="shaders\3.3.particle.frag" />
+    <None Include="shaders\3.3.particle.vert" />
+    <None Include="shaders\3.3.aa_post.vert" />
+    <None Include="shaders\3.3.aa_post.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\awesomeface.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\background.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\block.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\block_solid.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\paddle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\particle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

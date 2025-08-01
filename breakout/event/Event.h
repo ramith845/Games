@@ -45,3 +45,7 @@ public:
 private:
 	Event& m_Event;
 };
+
+#define EVENT_CLASS_TYPE(x) virtual EventType GetEventType() const override {return GetStaticType();} \
+				 virtual const char* GetEventName() const override { return #x;} \
+				 static inline EventType GetStaticType() { return EventType::##x; }

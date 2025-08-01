@@ -8,7 +8,7 @@ enum class BrickType
 	SOLID_BRICK,
 	BLUE_BRICK,
 	GREEN_BRICK,
-	YELLOW_BRICK,
+	PURPLE_BRICK,
 	RED_BRICK,
 };
 
@@ -22,6 +22,7 @@ public:
 	bool IsCompleted();
 	void LoadLevel(const char* file, unsigned int lvlWidth, unsigned int lvlHeight);
 	void Init(std::vector<std::vector<int>> tileData, unsigned int lvlWidth, unsigned int lvlHeight);
+	std::vector<GameObject*>& GetEnt();
 private:
 	std::vector<GameObject*> m_Entities{};
 };

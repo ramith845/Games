@@ -7,7 +7,7 @@ SpriteRenderer::SpriteRenderer(Shader* shader)
 	Init();
 }
 
-SpriteRenderer::~SpriteRenderer() 
+SpriteRenderer::~SpriteRenderer()
 {
 	std::println("[SpriteRenderer] Cleaning and deleting resources...");
 	std::println("	- deleting vertex buffer: {}", m_VBO);
@@ -45,7 +45,7 @@ void SpriteRenderer::Init()
 	glBindVertexArray(0);
 }
 
-void SpriteRenderer::Draw(Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color)
+void SpriteRenderer::DrawSprite(Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color, bool isBrick)
 {
 	m_Shader->use();
 
@@ -60,6 +60,11 @@ void SpriteRenderer::Draw(Texture2D* texture, glm::vec2 position, float rotate, 
 
 	m_Shader->SetMatrix4("model", model);
 	m_Shader->SetVec3("spriteColor", color);
+	m_Shader->SetBool("is_brick", isBrick);
+	if (isBrick)
+	{
+		m_Shader->SetVec2("brick_size", size);
+	}
 
 	glActiveTexture(GL_TEXTURE0);
 	texture->Bind();

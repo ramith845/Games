@@ -183,6 +183,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="object\BallObject.cpp" />
     <ClCompile Include="core\Game.cpp" />
     <ClCompile Include="level\GameLevel.cpp" />
     <ClCompile Include="object\GameObject.cpp" />
@@ -194,6 +195,7 @@
     </ClCompile>
     <ClCompile Include="misc\LevelTester.cpp" />
     <ClCompile Include="core\main.cpp" />
+    <ClCompile Include="object\ParticleGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
@@ -205,6 +207,8 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="manager\ResourceManager.cpp" />
+    <ClCompile Include="object\PowerUp.cpp" />
+    <ClCompile Include="renderer\PostProcessor.cpp" />
     <ClCompile Include="renderer\Shader.cpp" />
     <ClCompile Include="renderer\SpriteRenderer.cpp" />
     <ClCompile Include="impl\stb_image_impl.cpp">
@@ -217,13 +221,19 @@
     <ClCompile Include="core\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="event\WindowEvent.h" />
+    <ClInclude Include="object\BallObject.h" />
     <ClInclude Include="event\Event.h" />
     <ClInclude Include="core\Game.h" />
     <ClInclude Include="level\GameLevel.h" />
     <ClInclude Include="object\GameObject.h" />
     <ClInclude Include="event\KeyEvent.h" />
     <ClInclude Include="misc\LevelTester.h" />
+    <ClInclude Include="object\Particle.h" />
+    <ClInclude Include="object\ParticleGenerator.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="object\PowerUp.h" />
+    <ClInclude Include="renderer\PostProcessor.h" />
     <ClInclude Include="utils\Random.h" />
     <ClInclude Include="manager\ResourceManager.h" />
     <ClInclude Include="renderer\Shader.h" />
@@ -237,8 +247,20 @@
     <None Include="levels\one.lvl" />
     <None Include="levels\three.lvl" />
     <None Include="levels\two.lvl" />
+    <None Include="shaders\3.3.aa_post.frag" />
+    <None Include="shaders\3.3.aa_post.vert" />
+    <None Include="shaders\3.3.particle.frag" />
+    <None Include="shaders\3.3.particle.vert" />
     <None Include="shaders\3.3.shader.vert" />
     <None Include="shaders\3.3.shader.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\awesomeface.png" />
+    <Image Include="resources\background.jpg" />
+    <Image Include="resources\block.png" />
+    <Image Include="resources\block_solid.png" />
+    <Image Include="resources\paddle.png" />
+    <Image Include="resources\particle.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

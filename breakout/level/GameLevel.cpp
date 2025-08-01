@@ -2,6 +2,12 @@
 #include "level/GameLevel.h"
 #include "manager/ResourceManager.h"
 
+constexpr const glm::vec3 BRICK_COLOR { glm::vec3(249,99,99) / 255.f };
+constexpr const glm::vec3 RED_COLOR   { glm::vec3(255,0,141) / 255.f };
+constexpr const glm::vec3 BLUE_COLOR  { glm::vec3(  5, 217, 232) / 255.f };
+constexpr const glm::vec3 PURPLE_COLOR{ glm::vec3(137,   0, 255) / 255.f };
+constexpr const glm::vec3 GREEN_COLOR { glm::vec3(  0, 255, 159) / 255.f };
+
 GameLevel::GameLevel()
 {
 	GameObject::ResetSidCounter();
@@ -10,11 +16,12 @@ GameLevel::GameLevel()
 GameLevel::~GameLevel()
 {
 	std::println("[GameLevel] Cleaning and deleting resources...");
-	for (auto ent : m_Entities)
+	for (auto* entity : m_Entities)
 	{
-		std::println("	- deleting object: {}", ent->GetID());
-		delete ent;
+		std::println("	- deleting object: {}", entity->GetID());
+		delete entity;
 	}
+	m_Entities.clear();
 	std::println("[GameLevel] Cleaned up.");
 }
 
@@ -100,6 +107,7 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 	//float rot{ 0.0f };
 	glm::vec3 color{ 1.0f };
 	const char* textureName{};
+	bool solid{ false };
 
 	//std::println("LEVEL: ");
 	int y{ 0 };
@@ -120,31 +128,46 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 			switch (type)
 			{
 			case BrickType::SOLID_BRICK:
-				color = glm::vec3(0.8f, 0.8f, 0.7f);
+			{
+				color = BRICK_COLOR;
 				textureName = "block_solid";
+				solid = true;
 				break;
+			}
 			case BrickType::RED_BRICK:
-				color = glm::vec3(1.0f, 0.5f, 0.0f);
+			{
+				color = RED_COLOR;
 				textureName = "block";
+				solid = false;
 				break;
+			}
 			case BrickType::BLUE_BRICK:
-				color = glm::vec3(0.2f, 0.6f, 1.0f);
+			{
+				color = BLUE_COLOR;
 				textureName = "block";
+				solid = false;
 				break;
-			case BrickType::YELLOW_BRICK:
-				color = glm::vec3(0.8f, 0.8f, 0.4f);
+			}
+			case BrickType::PURPLE_BRICK:
+			{
+				color = PURPLE_COLOR;
 				textureName = "block";
+				solid = false;
 				break;
+			}
 			case BrickType::GREEN_BRICK:
-				color = glm::vec3(0.0f, 0.7f, 0.0f);
+			{
+				color = GREEN_COLOR;
 				textureName = "block";
+				solid = false;
 				break;
+			}
 			default:
 				break;
 			}
 
 			pos = glm::vec2(x * size.x, y * size.y);
-			m_Entities.push_back(new GameObject(pos, size, GET_TEXTURE(textureName), color));
+			m_Entities.push_back(new GameObject(pos, size, GET_TEXTURE(textureName), solid, color));
 
 			x++;
 		}
@@ -162,5 +185,11 @@ bool GameLevel::IsCompleted()
 void GameLevel::Draw(SpriteRenderer* renderer)
 {
 	for (const auto& ent : m_Entities)
-		renderer->Draw(ent->m_Texture, ent->m_Position, ent->m_Rotation, ent->m_Size, ent->m_Color);
+		if (ent->m_Alive)
+			renderer->DrawSprite(ent->m_Texture, ent->m_Position, ent->m_Rotation, ent->m_Size, ent->m_Color, true);
+}
+
+std::vector<GameObject*>& GameLevel::GetEnt()
+{
+	return m_Entities;
 }

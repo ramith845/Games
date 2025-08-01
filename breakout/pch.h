@@ -1,9 +1,14 @@
 #pragma once
-#include "Windows.h"
+//#include "Windows.h"
 #include "glad/glad.h"
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
 #include "gtc/matrix_transform.hpp"
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#ifdef _DEBUG
+#define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#endif
 
 
 #include <io.h>
@@ -20,6 +25,7 @@
 #include <filesystem>
 #include <vector>
 #include <map>
+#include <tuple>
 #include <unordered_map>
 #include <memory>
 #include <ranges>

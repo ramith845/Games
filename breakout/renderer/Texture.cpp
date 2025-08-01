@@ -1,6 +1,28 @@
 #include "pch.h"
 #include "Texture.h"
 
+Texture2D::Texture2D(
+	int width,
+	int height,
+	unsigned int format,
+	unsigned int internalFormat,
+	unsigned int wrapS,
+	unsigned int wrapT,
+	unsigned int minFilter,
+	unsigned int maxFilter)
+	: m_ID(0),
+	m_Width(static_cast<unsigned int>(width)),
+	m_Height(static_cast<unsigned int>(height)),
+	m_Format(format),
+	m_InternalFormat(internalFormat),
+	m_WrapS(wrapS),
+	m_WrapT(wrapT),
+	m_MinFilter(minFilter),
+	m_MaxFilter(maxFilter)
+{
+	glGenTextures(1, &m_ID);
+}
+
 Texture2D::~Texture2D()
 {
 	std::println("[Texture2D] Cleaning and deleting resources...");
@@ -37,26 +59,4 @@ void Texture2D::TextureMipMap()
 void Texture2D::Bind() const
 {
 	glBindTexture(GL_TEXTURE_2D, m_ID);
-}
-
-Texture2D::Texture2D(
-	int width,
-	int height,
-	unsigned int format,
-	unsigned int internalFormat,
-	unsigned int wrapS,
-	unsigned int wrapT,
-	unsigned int minFilter,
-	unsigned int maxFilter)
-	: m_ID(0),
-	m_Width(static_cast<unsigned int>(width)),
-	m_Height(static_cast<unsigned int>(height)),
-	m_Format(format),
-	m_InternalFormat(internalFormat),
-	m_WrapS(wrapS),
-	m_WrapT(wrapT),
-	m_MinFilter(minFilter),
-	m_MaxFilter(maxFilter)
-{
-	glGenTextures(1, &m_ID);
 }

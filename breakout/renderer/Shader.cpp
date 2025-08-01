@@ -46,9 +46,10 @@ bool Shader::Compile(const char* vertexCodeSrc, const char* fragmentCodeSrc, con
 	return compiled;
 }
 
-void Shader::use() const
+const Shader* Shader::use() const
 {
 	glUseProgram(m_ID);
+	return this;
 }
 
 void Shader::SetBool(const std::string& name, bool value) const
@@ -66,9 +67,29 @@ void Shader::SetFloat(const std::string& name, float value) const
 	glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value);
 }
 
+void Shader::Set1fv(const std::string& name, int count, float* value) const
+{
+	glUniform1fv(glGetUniformLocation(m_ID, name.c_str()), count, value);
+}
+
+void  Shader::SetVec2(const std::string& name, glm::vec2 color) const
+{
+	glUniform2f(glGetUniformLocation(m_ID, name.c_str()), color.x, color.y);
+}
+
+void Shader::SetVec2fv(const std::string& name, int count, float* value) const
+{
+	glUniform2fv(glGetUniformLocation(m_ID, name.c_str()), count, value);
+}
+
 void  Shader::SetVec3(const std::string& name, glm::vec3 color) const
 {
 	glUniform3f(glGetUniformLocation(m_ID, name.c_str()), color.x, color.y, color.z);
+}
+
+void  Shader::SetVec4(const std::string& name, glm::vec4 color) const
+{
+	glUniform4f(glGetUniformLocation(m_ID, name.c_str()), color.x, color.y, color.z, color.w);
 }
 
 void  Shader::SetMatrix4(const std::string& name, glm::mat4 mat) const

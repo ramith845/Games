@@ -16,15 +16,7 @@ public:
 	KeyPressEvent(int k, int count) :KeyEvent(k), m_Count(count) {}
 	~KeyPressEvent() {}
 	int GetKeyCount() { return m_Count; }
-	virtual EventType GetEventType() const override
-	{
-		return GetStaticType();
-	}
-	virtual const char* GetEventName() const override
-	{
-		return "KeyPress";
-	}
-	static inline EventType GetStaticType() { return EventType::KeyPress; }
+	EVENT_CLASS_TYPE(KeyPress)
 private:
 	int m_Count{};
 };
@@ -35,13 +27,5 @@ public:
 	KeyReleaseEvent(int k) :KeyEvent(k) {}
 	~KeyReleaseEvent() {}
 
-	virtual EventType GetEventType() const override
-	{
-		return GetStaticType();
-	}
-	virtual const char* GetEventName() const override
-	{
-		return "KeyRelease";
-	}
-	static inline EventType GetStaticType() { return EventType::KeyRelease; }
+	EVENT_CLASS_TYPE(KeyRelease)
 };

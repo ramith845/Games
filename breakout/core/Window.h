@@ -16,20 +16,22 @@ struct WindowData
 class Window
 {
 public:
-	Window(unsigned int width, unsigned int height, std::string name)
-		: m_Data(WindowData{ .width = width, .height = height, .title = name })
-	{
-		Init();
-	}
+	Window(unsigned int width, unsigned int height, std::string name);
 	Window() = default;
-	~Window() {}
+	~Window();
+
+	bool Init();
+	bool IsSuccess() const { return m_Success; }
 
 	void SetCBEventfn(CBEventfn_t fn) { m_Data.CBEventfn = fn; }
-	void Update();
-	bool IsWindowClosed() const;
-	void Init();
+	void SwapBuffers();
+	void Viewport(int width, int height);
+	void SetTitle(const char* title);
+
+public:
 private:
 	WindowData m_Data{};
+	bool m_Success{ true };
 	GLFWwindow* m_Window{};
 };
 

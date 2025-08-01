@@ -13,15 +13,21 @@ Texture2D* ResourceManager::LoadTexture(std::string path, std::string name)
 #endif // _DEBUG
 	assert(expression && "Wrong extension for vertex shader");
 	assert(std::filesystem::exists(path) && "file doesn't exist");
-	s_Textures[name] = LoadTextureFromFile(path.c_str());
-	return s_Textures[name];
+
+	Texture2D* tex = LoadTextureFromFile(path.c_str());
+	if (tex)
+		s_Textures[name] = tex;
+	else
+		std::cerr << "Texture load failed\n";
+
+	return tex;
 }
 
 Texture2D* ResourceManager::LoadTextureFromFile(const char* path)
 {
 	int width, height, channels;
 	unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
-	Texture2D* texture{ new Texture2D(0,0) };
+	Texture2D* texture{ nullptr };
 	if (data)
 	{
 		if (channels == 4)
@@ -32,8 +38,7 @@ Texture2D* ResourceManager::LoadTextureFromFile(const char* path)
 	}
 	else
 	{
-		texture = nullptr;
-		std::cerr << "Failed to load texture " << path << std::endl;
+		std::cerr << "Failed to load file: " << path << "\n";
 	}
 	stbi_image_free(data);
 	return texture;

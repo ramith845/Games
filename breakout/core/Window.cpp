@@ -2,9 +2,23 @@
 #include "GLFW/glfw3.h"
 #include "Window.h"
 #include "event/KeyEvent.h"
+#include "event/WindowEvent.h"
+#include "manager/ResourceManager.h"
 
 
-void Window::Init()
+Window::Window(unsigned int width, unsigned int height, std::string name)
+	: m_Data(WindowData{ .width = width, .height = height, .title = name })
+{
+	m_Success = Init();
+}
+
+Window::~Window()
+{
+	glfwDestroyWindow(m_Window);
+	glfwTerminate();
+}
+
+bool Window::Init()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -16,7 +30,7 @@ void Window::Init()
 	{
 		std::cerr << "WindowMy not created" << "\n";
 		glfwTerminate();
-		//return -1;
+		return false;
 	}
 	glfwMakeContextCurrent(m_Window);
 	glfwSetWindowUserPointer(m_Window, (void*)&m_Data);
@@ -25,15 +39,17 @@ void Window::Init()
 	{
 		std::cerr << "Gladd loader failed:(";
 		glfwTerminate();
-		//return -1;
+		return false;
 	}
+	std::cout << "GPU: " << glGetString(GL_RENDERER) << std::endl;
 
 	glViewport(0, 0, (int)m_Data.width, (int)m_Data.height);
-	glfwSetFramebufferSizeCallback(m_Window, 
-		[](GLFWwindow* window, int width, int height) 
+	glfwSetFramebufferSizeCallback(m_Window,
+		[](GLFWwindow* window, int width, int height)
 		{
-			window;
-			glViewport(0, 0, width, height); 
+			WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+			WindowResizeEvent e(width, height);
+			data->CBEventfn(e);
 		}
 	);
 	glfwSetKeyCallback(m_Window,
@@ -70,15 +86,34 @@ void Window::Init()
 			}
 		}
 	);
+
+	glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
+		{
+			WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+			WindowCloseEvent e{};
+			data->CBEventfn(e);
+		}
+	);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	return true;
 }
 
-bool Window::IsWindowClosed() const
-{
-	return glfwWindowShouldClose(m_Window);
-}
-
-void Window::Update()
+void Window::SwapBuffers()
 {
 	glfwPollEvents();
 	glfwSwapBuffers(m_Window);
 }
+
+void Window::Viewport(int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
+void Window::SetTitle(const char* title)
+{
+	glfwSetWindowTitle(m_Window, title);
+}
+
