@@ -2,11 +2,11 @@
 #include "level/GameLevel.h"
 #include "manager/ResourceManager.h"
 
-constexpr const glm::vec3 BRICK_COLOR { glm::vec3(249,99,99) / 255.f };
-constexpr const glm::vec3 RED_COLOR   { glm::vec3(255,0,141) / 255.f };
-constexpr const glm::vec3 BLUE_COLOR  { glm::vec3(  5, 217, 232) / 255.f };
+constexpr const glm::vec3 BRICK_COLOR{ glm::vec3(249,99,99) / 255.f };
+constexpr const glm::vec3 RED_COLOR{ glm::vec3(255,0,141) / 255.f };
+constexpr const glm::vec3 BLUE_COLOR{ glm::vec3(5, 217, 232) / 255.f };
 constexpr const glm::vec3 PURPLE_COLOR{ glm::vec3(137,   0, 255) / 255.f };
-constexpr const glm::vec3 GREEN_COLOR { glm::vec3(  0, 255, 159) / 255.f };
+constexpr const glm::vec3 GREEN_COLOR{ glm::vec3(0, 255, 159) / 255.f };
 
 GameLevel::GameLevel()
 {
@@ -15,14 +15,14 @@ GameLevel::GameLevel()
 
 GameLevel::~GameLevel()
 {
-	std::println("[GameLevel] Cleaning and deleting resources...");
+	// std::println("[GameLevel] Cleaning and deleting resources...");
 	for (auto* entity : m_Entities)
 	{
-		std::println("	- deleting object: {}", entity->GetID());
+		// std::println("\t- deleting object: {}", entity->GetID());
 		delete entity;
 	}
 	m_Entities.clear();
-	std::println("[GameLevel] Cleaned up.");
+	// std::println("[GameLevel] Cleaned up.");
 }
 
 
@@ -116,7 +116,7 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 		int x{ 0 };
 		for (const auto& tile : rowTiles)
 		{
-			//std::print("{}, ", tile);
+			//std::print("{0}, ", tile);
 			BrickType type{ static_cast<BrickType>(tile) };
 
 			if (type == BrickType::EMPTY || tile > 5)
@@ -185,8 +185,17 @@ bool GameLevel::IsCompleted()
 void GameLevel::Draw(SpriteRenderer* renderer)
 {
 	for (const auto& ent : m_Entities)
+#ifndef BRICK_DEBUG  
 		if (ent->m_Alive)
-			renderer->DrawSprite(ent->m_Texture, ent->m_Position, ent->m_Rotation, ent->m_Size, ent->m_Color, true);
+#endif
+			renderer->DrawSprite(
+				ent->m_Texture, ent->m_Position,
+				ent->m_Rotation, ent->m_Size,
+				ent->m_Color, true
+#ifdef BRICK_DEBUG  
+				, ent->m_Hit
+#endif
+			);
 }
 
 std::vector<GameObject*>& GameLevel::GetEnt()

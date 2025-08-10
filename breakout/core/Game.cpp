@@ -10,55 +10,8 @@
 #include "renderer/PostProcessor.h"
 #include "utils/Random.h"
 #include "utils/Utility.h"
-
-
-constexpr const char* BACKGROUND_IMG = "resources/background1_edit.jpg";
-constexpr const char* AWESOMEFACE_IMG = "resources/awesomeface.png";
-constexpr const char* BLOCK_IMG = "resources/block.png";
-constexpr const char* BLOCK_SOLID_IMG = "resources/block_solid.png";
-constexpr const char* PADDLE_IMG = "resources/paddle.png";
-constexpr const char* PARTICLE_IMG = "resources/particle.png";
-
-constexpr const char* POWERUP_TEXTURE_PATHS[] = {
-	"resources/powerup_chaos.png",          // Chaos
-	"resources/powerup_decrease.png",       // DecreasePaddleSize
-	"resources/powerup_speed.png",          // IncreaseBallVelocity
-	"resources/powerup_confuse.png",        // Confuse
-	"resources/powerup_slow.png",           // DecreaseBallVelocity
-	"resources/powerup_increase.png",       // IncreasePaddleSize
-	"resources/powerup_sticky.png",         // StickyPaddle
-	"resources/powerup_passthrough.png",    // PassThrough
-	"resources/powerup_life.png" // BonusLife (make sure this file exists)
-};
-constexpr const char* POWERUP_TEXTURE_NAMES[] = {
-	"powerup_chaos",            // Chaos
-	"powerup_decrease",        // DecreasePaddleSize
-	"powerup_speed",           // IncreaseBallVelocity
-	"powerup_confuse",         // Confuse
-	"powerup_slow",            // DecreaseBallVelocity
-	"powerup_increase",        // IncreasePaddleSize
-	"powerup_sticky",          // StickyPaddle
-	"powerup_passthrough",     // PassThrough
-	"powerup_bonus_life"       // BonusLife (assumed name)
-};
-
-
-// Initial size of the player paddle
-const glm::vec2 PLAYER_SIZE(100.0f, 20.0f);
-// Player inc/dec size power factor
-const glm::vec2 PLAYER_SIZE_PWRUP_FACTOR(50.0f, 0.0f);
-// Initial velocity of the player paddle
-const float PLAYER_VELOCITY(250.0f);
-// Ball initial velocity
-const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
-// Radius of the ball object
-const float BALL_RADIUS = 12.5f;
-
-static float lastFrame = 0.0f;
-static float currentFrame;
-static float fpsLastFrame = 0.0f;
-static int counter{ 0 };
-static float ShakeTime = 0.0f;
+#include "Globals.h"
+#include "irrKlang/irrKlang.h"
 
 SpriteRenderer* renderer;
 GameObject* Player;
@@ -66,39 +19,59 @@ BallObject* Ball;
 ParticleGenerator* Particles;
 PostProcessor* Effects;
 
+SpriteRenderer* collisionBoxRenderer;
+GameObject* collisionBox1;
+GameObject* collisionBox2;
+std::vector<GameObject*> debugBoxes;
+GameObject* selected{ nullptr };
+
+void print_game_object_info(const char* label, const GameObject* obj);
+void init_collision_boxes(glm::mat4 projection);
+void load_assets(glm::mat4 projection);
+void load_all_levels(Game& game);
+bool contains_point(glm::vec2 pos, BoundinBox bb);
+Game::IrrKlangEnginePtr_t create_sound_engine();
+
 Game::Game(unsigned int width, unsigned int height)
 	: m_Width(width), m_Height(height), m_Level(0)
 	, m_State(GameState::ACTIVE), m_Keys(), m_DeltaTime(0.f)
 {
+	if (width < 0 || height < 0) {
+		throw std::invalid_argument("Width and height must be non-negative.");
+	}
+
+	PowerUp::s_Weights[PowerUp::Chaos] = 30;
+	PowerUp::s_Weights[PowerUp::Confuse] = 25;
+	PowerUp::s_Weights[PowerUp::DecreasePaddleSize] = 22;
+	PowerUp::s_Weights[PowerUp::DecreaseBallVelocity] = 18;
+	PowerUp::s_Weights[PowerUp::IncreaseBallVelocity] = 14;
+	PowerUp::s_Weights[PowerUp::PassThrough] = 10;
+	PowerUp::s_Weights[PowerUp::StickyPaddle] = 8;
+	PowerUp::s_Weights[PowerUp::IncreasePaddleSize] = 6;
+	PowerUp::s_Weights[PowerUp::BonusLife] = 2;
+
+	PowerUp::s_TotalWeight = 0;
+	for (int i = 0; i < PowerUp::End; i++)
+	{
+		PowerUp::s_TotalWeight += PowerUp::s_Weights[i];
+	}
+
 	m_Window = std::make_unique<Window>(width, height, "Game");
 	if (!m_Window->IsSuccess())
 	{
 		throw std::runtime_error("Failed to create window!");
 	}
 	m_Window->SetCBEventfn(std::bind(&Game::OnEvent, this, std::placeholders::_1));
+	m_SoundEngine = create_sound_engine();
+	m_SoundEngine->loadPlugins("ikpMP3.dll");
+	//irrklang::ISound* music = m_SoundEngine->play2D(SONG_PATH, LOOP, START_UNPAUSED, TRACK/*returns sound for tweaking*/);
+	//if (music) music->setVolume(0.2f);
 }
 
 Game::Game(int width, int height)
 	: Game(static_cast<unsigned int>(width), static_cast<unsigned int>(height))
 {
-	if (width < 0 || height < 0) {
-		throw std::invalid_argument("Width and height must be non-negative.");
-	}
 
-	PowerUp::s_Weights[PowerUp::Chaos] = 50;
-	PowerUp::s_Weights[PowerUp::DecreasePaddleSize] = 50;
-	PowerUp::s_Weights[PowerUp::IncreaseBallVelocity] = 50;
-	PowerUp::s_Weights[PowerUp::Confuse] = 40;
-	PowerUp::s_Weights[PowerUp::DecreaseBallVelocity] = 15;
-	PowerUp::s_Weights[PowerUp::IncreasePaddleSize] = 15;
-	PowerUp::s_Weights[PowerUp::StickyPaddle] = 15;
-	PowerUp::s_Weights[PowerUp::PassThrough] = 15;
-	PowerUp::s_Weights[PowerUp::BonusLife] = 10;
-
-	for (int i = 0; i < PowerUp::End; i++)
-	{
-		PowerUp::s_TotalWeight += PowerUp::s_Weights[i];
-	}
 }
 
 Game::~Game()
@@ -114,26 +87,57 @@ Game::~Game()
 	std::println("	- deleting Ball(Object)");
 	delete Ball;
 
+	delete Particles;
+
+	delete Effects;
+
 	ResourceManager::Cleanup();
 
 	std::println("[Game] Cleanup complete.");
 }
 
+
 int Game::Init()
 {
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_Width), static_cast<float>(m_Height), 0.0f, -1.0f, 1.0f);
+	load_assets(projection);
 
+	load_all_levels(*this);
+
+	InitPlayer();
+
+	init_collision_boxes(projection);
+
+	return 1;
+}
+
+void init_collision_boxes(glm::mat4 projection)
+{
+	ResourceManager::LoadShader("3.3.collision_shader.vert", "3.3.collision_shader.frag", "collision_shader");
+	GET_SHADER("collision_shader")->use()->SetMatrix4("projection", projection);
+
+	collisionBoxRenderer = new SpriteRenderer(GET_SHADER("collision_shader"));
+	collisionBox1 = new GameObject(glm::vec2{ 20.f, 50.f }, glm::vec2{ 100.f, 50.f }, nullptr, false, glm::vec3(1.0f, 0.2f, 0.2f));
+	collisionBox2 = new GameObject(glm::vec2{ 200.f, 50.f }, glm::vec2{ 100.f, 50.f }, nullptr, false, glm::vec3(0.3f, 1.0f, 0.5f));
+	debugBoxes.push_back(collisionBox1);
+	debugBoxes.push_back(collisionBox2);
+}
+
+void load_assets(glm::mat4 projection)
+{
+	// SPRITE SHADER LOADING
 	ResourceManager::LoadShader("shaders/3.3.shader.vert", "shaders/3.3.shader.frag", "sprite_shader");
 	GET_SHADER("sprite_shader")->use();
 	GET_SHADER("sprite_shader")->SetInt("image", 0);
 	GET_SHADER("sprite_shader")->SetMatrix4("projection", projection);
 
-	ResourceManager::LoadShader("shaders/3.3.particle.vert", "shaders/3.3.particle.frag", "particle_shader");
+	renderer = new SpriteRenderer(GET_SHADER("sprite_shader"));
 
+	// PARTICLE SHADER LOADING
+	ResourceManager::LoadShader("shaders/3.3.particle.vert", "shaders/3.3.particle.frag", "particle_shader");
 	GET_SHADER("particle_shader")->use();
 	GET_SHADER("particle_shader")->SetInt("image", 0);
 	GET_SHADER("particle_shader")->SetMatrix4("projection", projection);
-
 
 	// TEXTURE LOADING
 	ResourceManager::LoadTexture(BACKGROUND_IMG, "background");
@@ -144,41 +148,53 @@ int Game::Init()
 	ResourceManager::LoadTexture(PARTICLE_IMG, "particle");
 	// POWERUP TEXTURES
 	for (int i = 0; i < PowerUp::Type::End; ++i) {
-		ResourceManager::LoadTexture(POWERUP_TEXTURE_PATHS[i], POWERUP_TEXTURE_NAMES[i]);
+		ResourceManager::LoadTexture(POWERUP_TEXTURES[i].path, POWERUP_TEXTURES[i].name);
 	}
+}
 
-
-
-	renderer = new SpriteRenderer(GET_SHADER("sprite_shader"));
-
-
+void load_all_levels(Game& game)
+{
 	std::vector<const char*> levelPaths{ "levels/one.lvl", "levels/two.lvl", "levels/three.lvl", "levels/four.lvl" };
 	for (const char* path : levelPaths) {
 		auto level = std::make_unique<GameLevel>();
-		level->LoadLevel(path, m_Width, m_Height / 2);
-		m_Levels.push_back(std::move(level));
+		level->LoadLevel(path, game.m_Width, game.m_Height / 2);
+		game.m_Levels.push_back(std::move(level));
 	}
-	m_Level = 0;
+	game.m_Level = 0;
+}
 
-	glm::vec2 playerInitialPos = glm::vec2(383.7f, m_Height - PLAYER_SIZE.y);
+Game::IrrKlangEnginePtr_t create_sound_engine()
+{
+	return Game::IrrKlangEnginePtr_t(
+		irrklang::createIrrKlangDevice(),
+		[](irrklang::ISoundEngine* engine)
+		{
+			if (engine)
+				engine->drop();
+		});
+}
+
+void Game::InitPlayer()
+{
+	glm::vec2 playerInitialPos = glm::vec2(383.7f, m_Height - INITIAL_PLAYER_SIZE.y);
 	Player = new GameObject{
 		playerInitialPos,
-		PLAYER_SIZE,
+		INITIAL_PLAYER_SIZE,
 		GET_TEXTURE("paddle"),
 		true,
 		glm::vec3(1.0),
 		glm::vec2(PLAYER_VELOCITY) };
+	m_InitPlayer = std::make_unique<GameObject>(*Player);
 
-	glm::vec2 ballInitialPos{ playerInitialPos.x + PLAYER_SIZE.x / 2.0f - BALL_RADIUS,  playerInitialPos.y - 2.f * BALL_RADIUS };
+	Texture2DPtr t = GET_TEXTURE("face");
+
+	glm::vec2 ballInitialPos{ playerInitialPos.x + INITIAL_PLAYER_SIZE.x / 2.0f - BALL_RADIUS,  playerInitialPos.y - 2.f * BALL_RADIUS };
 	Ball = new BallObject(ballInitialPos, BALL_RADIUS, GET_TEXTURE("face"), INITIAL_BALL_VELOCITY);
-	Ball->m_Stuck = true;
+	m_InitBall = std::make_unique<BallObject>(*Ball);
 
 	Particles = new ParticleGenerator(GET_SHADER("particle_shader"), GET_TEXTURE("particle"), 500);
 
 	Effects = new PostProcessor(m_Width, m_Height);
-
-
-	return 1;
 }
 
 void Game::OnEvent(Event& e)
@@ -189,6 +205,9 @@ void Game::OnEvent(Event& e)
 	handler.Dispatch<KeyReleaseEvent>(std::bind(&Game::OnKeyRelease, this, std::placeholders::_1));
 	handler.Dispatch<WindowCloseEvent>(std::bind(&Game::OnCloseGame, this, std::placeholders::_1));
 	handler.Dispatch<WindowResizeEvent>(std::bind(&Game::OnResizeGame, this, std::placeholders::_1));
+	handler.Dispatch<MouseMovedEvent>(std::bind(&Game::OnMouseMove, this, std::placeholders::_1));
+	handler.Dispatch<MouseBtnReleasedEvent>(std::bind(&Game::OnMouseBtnRelease, this, std::placeholders::_1));
+	handler.Dispatch<MouseBtnPressedEvent>(std::bind(&Game::OnMouseBtnPress, this, std::placeholders::_1));
 }
 
 bool Game::OnCloseGame(WindowCloseEvent& e)
@@ -211,7 +230,7 @@ bool Game::OnResizeGame(WindowResizeEvent& e)
 bool Game::OnKeyRelease(KeyReleaseEvent& e)
 {
 	m_Keys[static_cast<size_t>(e.GetKeyCode())] = false;
-	std::println("Key release: {}", (char)e.GetKeyCode());
+	//std::println("Key release: {}", (char)e.GetKeyCode());
 	return true;
 }
 
@@ -222,6 +241,148 @@ bool Game::OnKeyPress(KeyPressEvent& e)
 	return true;
 }
 
+bool Game::OnMouseMove(MouseMovedEvent& e)
+{
+	m_Mouse.x = e.GetX();
+	m_Mouse.y = e.GetY();
+	//std::println("{}", e.ToString());
+	return true;
+}
+
+bool Game::OnMouseBtnRelease(MouseBtnReleasedEvent& e)
+{
+	m_IsDragging = false;
+	std::println("{}", e.ToString());
+	selected = nullptr;
+	return true;
+}
+
+bool Game::OnMouseBtnPress(MouseBtnPressedEvent& e)
+{
+	m_IsDragging = true;
+	CheckWithinCollisionBox();
+	std::println("{}", e.ToString());
+	return true;
+}
+
+float get_powerup_duration(std::string_view type)
+{
+	if (type == PWR_TYPE(Chaos))
+		return 15.0f;
+	else if (type == PWR_TYPE(DecreasePaddleSize))
+		return 0.0f;
+	else if (type == PWR_TYPE(IncreaseBallVelocity))
+		return 10.0f;
+	else if (type == PWR_TYPE(Confuse))
+		return 15.0f;
+	else if (type == PWR_TYPE(DecreaseBallVelocity))
+		return 20.0f;
+	else if (type == PWR_TYPE(IncreasePaddleSize))
+		return 0.0f;
+	else if (type == PWR_TYPE(StickyPaddle))
+		return 10.0f;
+	else if (type == PWR_TYPE(PassThrough))
+		return 10.0f;
+	else if (type == PWR_TYPE(BonusLife))
+		return 0.0f;
+	std::println("Unknown powerup encountered");
+	return 5.0f;
+}
+
+void Game::SpawnPowerups(GameObject& obj)
+{
+	int bias = PowerUp::s_TotalWeight * 2;
+	int chance = Random::get(0, PowerUp::s_TotalWeight + bias);
+	int cumulativeWeight = 0;
+	//Iterate through the powerup types and their weights
+	for (int type = PowerUp::Chaos; type < PowerUp::Type::End; ++type)
+	{
+		cumulativeWeight += PowerUp::s_Weights[type];
+		if (cumulativeWeight >= chance)
+		{
+			glm::vec2 size = (type == PowerUp::BonusLife) ? glm::vec2(30.f) : PowerUp::s_Size;
+			auto powerup = std::make_unique<PowerUp>(
+				PowerUp::PowerTypeString(static_cast<PowerUp::Type>(type)).data(),
+				get_powerup_duration(PWR_TYPE_INT(type)),
+				obj.GetCenter() - PowerUp::s_Size / 2.0f,
+				GET_TEXTURE(POWERUP_TEXTURES[type].name),
+				POWERUP_TEXTURES[type].color,
+				size
+			);
+			m_PowerUps.push_back(std::move(powerup));
+			break;
+		}
+	}
+}
+
+void activate_power_up(PowerUp& powerup, Game& game)
+{
+	if (powerup.m_Activated)
+		return;
+	powerup.m_Activated = true;
+	std::println("Activating powerup: {}", powerup.m_Type);
+	if (powerup.m_Type == PWR_TYPE(Chaos))
+	{
+		Effects->m_Chaos = true;
+	}
+	else if (powerup.m_Type == PWR_TYPE(DecreasePaddleSize))
+	{
+		auto fixedCenter = Player->GetCenter().x;
+		auto newBallRelOffset = (Ball->GetCenter().x - fixedCenter) / PLAYER_SIZE_PWRUP_FACTOR;
+		Player->m_Size.x = INITIAL_PLAYER_SIZE.x / PLAYER_SIZE_PWRUP_FACTOR;
+		Player->m_Position.x = fixedCenter - Player->m_Size.x / 2.0f;
+		Player->UpdateBoundingBox();
+		if (Ball->m_Stuck)
+		{
+			Ball->m_Position.x = fixedCenter + newBallRelOffset - Ball->m_Radius;
+			Ball->UpdateBoundingBox();
+		}
+	}
+	else if (powerup.m_Type == PWR_TYPE(IncreaseBallVelocity))
+	{
+		float speed = glm::length(INITIAL_BALL_VELOCITY) * BALL_SIZE_PWRUP_FACTOR;
+		glm::vec2 direction = glm::normalize(Ball->m_Velocity);
+		Ball->m_Velocity = speed * direction;
+	}
+	else if (powerup.m_Type == PWR_TYPE(Confuse))
+	{
+		Effects->m_Confuse = true;
+	}
+	else if (powerup.m_Type == PWR_TYPE(DecreaseBallVelocity))
+	{
+		float speed = glm::length(INITIAL_BALL_VELOCITY) / BALL_SIZE_PWRUP_FACTOR;
+		glm::vec2 direction = glm::normalize(Ball->m_Velocity);
+		Ball->m_Velocity = speed * direction;
+	}
+	else if (powerup.m_Type == PWR_TYPE(IncreasePaddleSize))
+	{
+		auto fixedCenter = Player->GetCenter().x;
+		auto newBallRelOffset = (Ball->GetCenter().x - fixedCenter) * PLAYER_SIZE_PWRUP_FACTOR;
+		Player->m_Size.x = INITIAL_PLAYER_SIZE.x * PLAYER_SIZE_PWRUP_FACTOR;
+		Player->m_Position.x = fixedCenter - Player->m_Size.x / 2.0f;
+		Player->UpdateBoundingBox();
+		if (Ball->m_Stuck)
+		{
+			Ball->m_Position.x = fixedCenter + newBallRelOffset - Ball->m_Radius;
+			Ball->UpdateBoundingBox();
+		}
+	}
+	else if (powerup.m_Type == PWR_TYPE(StickyPaddle))
+	{
+		Ball->m_Sticky = true;
+	}
+	else if (powerup.m_Type == PWR_TYPE(PassThrough))
+	{
+		Ball->m_PassThrough = true;
+		Ball->m_Color = glm::vec3(0.98f, 0.53f, 0.53f);
+	}
+	else if (powerup.m_Type == PWR_TYPE(BonusLife))
+	{
+		game.m_Lives++;
+	}
+	powerup.m_Duration = get_powerup_duration(powerup.m_Type);
+} // activate_power_up
+
 glm::vec2 clamp(glm::vec2 val, glm::vec2 min, glm::vec2 max)
 {
 	return
@@ -231,7 +392,7 @@ glm::vec2 clamp(glm::vec2 val, glm::vec2 min, glm::vec2 max)
 	};
 }
 
-Direction CollisionDirection(glm::vec2 vec)
+Direction collision_direction(glm::vec2 vec)
 {
 	glm::vec2 compass[] = {
 		glm::vec2(0.0f, 1.0f),	// up
@@ -253,10 +414,8 @@ Direction CollisionDirection(glm::vec2 vec)
 	return static_cast<Direction>(match);
 }
 
-Collision_t Game::CheckCollision(BallObject& one, GameObject& two)
+Collision_t check_collision(BallObject& one, GameObject& two)
 {
-	// square based collision check AABB - naive approach for any shape
-	//return one.m_bb.min <= two.m_bb.max && two.m_bb.min <= one.m_bb.max; // overloaded op<=
 	glm::vec2 C{ one.GetCenter() };
 	glm::vec2 aabbCenter{ two.GetCenter() };
 
@@ -274,7 +433,7 @@ Collision_t Game::CheckCollision(BallObject& one, GameObject& two)
 	bool collison = glm::length(nearestVec) <= one.m_Radius;
 	if (collison)
 	{
-		return std::make_tuple(true, CollisionDirection(nearestVec), nearestVec);
+		return std::make_tuple(true, collision_direction(nearestVec), nearestVec);
 	}
 	else
 	{
@@ -282,28 +441,45 @@ Collision_t Game::CheckCollision(BallObject& one, GameObject& two)
 	}
 }
 
-void Game::DoCollisions(BallObject& ball)
+bool check_collision(GameObject& one, GameObject& two)
 {
-	// Check collision with all boxes in the current level
-	for (GameObject* box : m_Levels[m_Level]->GetEnt())
-	{
-		if (!box->m_Alive)
-			continue;
+	// square based collision check AABB - naive approach for any shape
+	return one.m_bb.min <= two.m_bb.max && two.m_bb.min <= one.m_bb.max; // overloaded op<=
+}
 
-		Collision_t collision = CheckCollision(ball, *box);
-		if (std::get<0>(collision))
+bool handle_brick_collision(Game& game, BallObject& ball, GameObject* box)
+{
+	game;
+	// circle vs AABB collision check,
+	Collision_t collision = check_collision(ball, *box);
+	if (std::get<0>(collision))
+	{
+#ifdef BRICK_DEBUG
+		if (!box->m_Solid)
+			box->m_Hit = true;
+		//game.m_BrickCollision = true;
+#endif // BRICK_DEBUG
+
+		if (!box->m_Solid)
 		{
-			if (!box->m_Solid)
-			{
-				box->m_Alive = false;
-			}
-			else
-			{
-				ShakeTime = 0.05f;
-				Effects->m_Shake = true;
-			}
-			Direction dir = std::get<1>(collision);
-			glm::vec2 diff = std::get<2>(collision);
+			game.m_SoundEngine->play2D(BLEEP_SFX_PATH, NO_LOOP);
+			box->m_Alive = false;
+			game.SpawnPowerups(*box);
+		}
+		else
+		{
+			game.m_SoundEngine->play2D(SOLID_SFX_PATH, NO_LOOP);
+			ShakeTime = 0.05f;
+			Effects->m_Shake = true;
+		}
+
+		// handle collision response
+		Direction dir = std::get<1>(collision);
+		dir;
+		glm::vec2 diff = std::get<2>(collision);
+		// skip if pass through and breakable box, otherwise reflect
+		if (!(Ball->m_PassThrough && !box->m_Solid))
+		{
 			if (dir == LEFT || dir == RIGHT)
 			{
 				float penetration = ball.m_Radius - std::abs(diff.x);
@@ -322,16 +498,34 @@ void Game::DoCollisions(BallObject& ball)
 				else
 					ball.m_Position.y += penetration;
 			}
+		}
+		return true;
+	}
+	return false;
+}
+
+void Game::DoCollisions(BallObject& ball)
+{
+	// ball with all boxes in the current level
+	for (GameObject* box : m_Levels[m_Level]->GetEnt())
+	{
+		if (!box->m_Alive)
+			continue;
+
+		// one collision only even for two+
+		if (handle_brick_collision(*this, ball, box))
+		{
 			break;
 		}
 	}
 
-	// Check collision with player paddle
-	Collision_t playa = CheckCollision(ball, *Player);
-	if (!Ball->m_Stuck && std::get<0>(playa))
+	// ball with player paddle
+	if (!Ball->m_Stuck)
 	{
-		if (std::get<1>(playa) == UP)
+		Collision_t playerCollision = check_collision(ball, *Player);
+		if (std::get<0>(playerCollision) && std::get<1>(playerCollision) == UP)
 		{
+			m_SoundEngine->play2D(BLEEP1_SFX_PATH, NO_LOOP);
 			glm::vec2 CPlaya = Player->GetCenter();
 			glm::vec2 CBall = ball.GetCenter();
 			float distance = CBall.x - CPlaya.x;
@@ -341,93 +535,63 @@ void Game::DoCollisions(BallObject& ball)
 			ball.m_Velocity.x = strength * per * INITIAL_BALL_VELOCITY.x;
 			ball.m_Velocity.y = -1.f * abs(ball.m_Velocity.y);
 			ball.m_Velocity = glm::normalize(ball.m_Velocity) * glm::length(oldVelocty);
+			Ball->m_Stuck = Ball->m_Sticky;
+			//print_game_object_info("Ball", &ball);
+			//print_game_object_info("CollidedWith Player: ", Player);
 		}
 	}
-}
 
-float GetPowerupDuration(std::string_view type)
-{
-	if (type == PWR_TYPE(Chaos))
-		return 15.0f;
-	else if (type == PWR_TYPE(DecreasePaddleSize))
-		return 0.0f;
-	else if (type == PWR_TYPE(IncreaseBallVelocity))
-		return 10.0f;
-	else if (type == PWR_TYPE(Confuse))
-		return 15.0f;
-	else if (type == PWR_TYPE(DecreaseBallVelocity))
-		return 20.0f;
-	else if (type == PWR_TYPE(IncreasePaddleSize))
-		return 0.0f;
-	else if (type == PWR_TYPE(StickyPaddle))
-		return 20.0f;
-	else if (type == PWR_TYPE(PassThrough))
-		return 10.0f;
-	else if (type == PWR_TYPE(BonusLife))
-		return 0.0f;
-	std::println("Unknown powerup encountered");
-	return 5.0f;
-}
-
-void Game::SpawnPowerups(GameObject& obj)
-{
-	obj;
-	int chance = /*Random::get(0, PowerUp::s_TotalWeight)*/1;
-	int cumulativeWeight = 0;
-	const glm::vec3 POWERUP_COLORS[] = {
-		glm::vec3(0.9f, 0.25f, 0.25f),  // Chaos
-		glm::vec3(1.0f, 0.6f, 0.4f),    // DecreasePaddleSize (reusing increase for balance)
-		glm::vec3(0.5f, 0.5f, 1.0f),    // IncreaseBallVelocity (speed)
-		glm::vec3(1.0f, 0.3f, 0.3f),    // Confuse
-		glm::vec3(0.3f, 0.3f, 1.0f),    // DecreaseBallVelocity (guessed cooler dim blue)
-		glm::vec3(1.0f, 0.6f, 0.4f),    // IncreasePaddleSize
-		glm::vec3(1.0f, 0.5f, 1.0f),    // StickyPaddle
-		glm::vec3(0.5f, 1.0f, 0.5f),    // PassThrough
-		glm::vec3(0.6f, 1.0f, 0.6f)     // BonusLife (guessed green tone)
-	};
-	for (int type = PowerUp::Chaos; type < PowerUp::Type::End; ++type)
+	// player with powerup objects
+	for (auto& powerup : m_PowerUps)
 	{
-		cumulativeWeight += PowerUp::s_Weights[type];
-		if (cumulativeWeight >= chance)
+		if (powerup->m_Alive)
 		{
-			glm::vec2 size = type == PowerUp::BonusLife ? glm::vec2(30.f) : PowerUp::s_Size;
-			/*auto powerup = std::make_unique<PowerUp>(
-				PowerUp::PowerTypeString(static_cast<PowerUp::Type>(type)),
-				GetPowerupDuration(PWR_TYPE_INT(type)),
-				obj.GetCenter() - glm::vec2(PowerUp::s_Size.x / 2.0f, PowerUp::s_Size.y / 2.0f),
-				GET_TEXTURE(POWERUP_TEXTURE_NAMES[type]),
-				POWERUP_COLORS[type],
-				size
-			);*/
-			//m_PowerUps.push_back(powerup);
-			break;
+			Player->UpdateBoundingBox(); // important to do this
+			powerup->UpdateBoundingBox();// important AAAB depends on this
+			if (check_collision(*Player, *powerup.get()))
+			{
+				m_SoundEngine->play2D(POWERUP_SFX_PATH, NO_LOOP);
+				powerup->m_Alive = false;
+				activate_power_up(*powerup, *this);
+			}
 		}
 	}
 }
 
 void Game::ResetLevel()
 {
+	m_Lives = 3;
 	for (auto* obj : m_Levels[m_Level]->GetEnt())
 	{
 		obj->m_Alive = true;
 	}
+
+	m_PowerUps.clear();
+	// Reset PLAYER, BALL and EFFECTS DATA 
+	*Ball = *m_InitBall;
+	*Player = *m_InitPlayer;
+
+	Effects->m_Chaos = false;
+	Effects->m_Confuse = false;
+	Effects->m_Shake = false;
 }
 
 void Game::ResetPlayer()
 {
-	glm::vec2 playerInitialPos = glm::vec2((m_Width - PLAYER_SIZE.x) / 2.0, m_Height - PLAYER_SIZE.y);
-	glm::vec2 ballInitialPos{ playerInitialPos.x + PLAYER_SIZE.x / 2.0f - BALL_RADIUS,  playerInitialPos.y - 2.f * BALL_RADIUS };
+	glm::vec2 playerInitialPos = glm::vec2((m_Width - INITIAL_PLAYER_SIZE.x) / 2.0, m_Height - INITIAL_PLAYER_SIZE.y);
+	glm::vec2 ballInitialPos{ playerInitialPos.x + INITIAL_PLAYER_SIZE.x / 2.0f - BALL_RADIUS,  playerInitialPos.y - 2.f * BALL_RADIUS };
+	Player->m_Size = INITIAL_PLAYER_SIZE;
 	Player->m_Position = playerInitialPos;
 	Ball->m_Position = ballInitialPos;
 	Ball->m_Velocity = INITIAL_BALL_VELOCITY;
 	Ball->m_Stuck = true;
 }
 
-bool Game::AnotherPowerupActive(std::string_view type)
+bool another_powerup_active(std::string_view type, const std::vector<std::unique_ptr<PowerUp>>& powerups)
 {
-	for (const auto& powerup : m_PowerUps)
+	for (const auto& powerup : powerups)
 	{
-		if (type == powerup->m_Type)
+		if (type == powerup->m_Type && powerup->m_Activated)
 		{
 			return true;
 		}
@@ -435,33 +599,47 @@ bool Game::AnotherPowerupActive(std::string_view type)
 	return false;
 }
 
-void PowerupDeactivate(std::string_view type)
+template<typename T>
+void Game::PowerupDeactivate(T& powerup)
 {
-	if (type == PWR_TYPE(Chaos))
+	if (powerup->m_Duration <= 0)
 	{
-		Effects->m_Chaos = false;
-	}
-	else if (type == PWR_TYPE(Confuse))
-	{
-		Effects->m_Confuse = false;
-	}
-	else if (type == PWR_TYPE(DecreaseBallVelocity))
-	{
-		Ball->m_Velocity = INITIAL_BALL_VELOCITY;
-	}
-	else if (type == PWR_TYPE(IncreaseBallVelocity))
-	{
-		Ball->m_Velocity = INITIAL_BALL_VELOCITY;
-	}
-	else if (type == PWR_TYPE(StickyPaddle))
-	{
-		Ball->m_Sticky = false;
-		Player->m_Color = glm::vec3(1.0f);
-	}
-	else if (type == PWR_TYPE(PassThrough))
-	{
-		Ball->m_PassThrough = false;
-		Ball->m_Color = glm::vec3(1.0f);
+		powerup->m_Activated = false;
+		std::string_view type = powerup->m_Type;
+		if (another_powerup_active(type, m_PowerUps))
+			return; // do not deactivate if another of the same type is active
+
+		if (type == PWR_TYPE(Chaos))
+		{
+			Effects->m_Chaos = false;
+		}
+		else if (type == PWR_TYPE(Confuse))
+		{
+			Effects->m_Confuse = false;
+		}
+		else if (type == PWR_TYPE(DecreaseBallVelocity))
+		{
+			float speed = glm::length(INITIAL_BALL_VELOCITY);
+			glm::vec2 direction = glm::normalize(Ball->m_Velocity);
+			Ball->m_Velocity = speed * direction;
+		}
+		else if (type == PWR_TYPE(IncreaseBallVelocity))
+		{
+			float speed = glm::length(INITIAL_BALL_VELOCITY);
+			glm::vec2 direction = glm::normalize(Ball->m_Velocity);
+			Ball->m_Velocity = speed * direction;
+		}
+		else if (type == PWR_TYPE(StickyPaddle))
+		{
+			Ball->m_Sticky = false;
+			Player->m_Color = glm::vec3(1.0f);
+		}
+		else if (type == PWR_TYPE(PassThrough))
+		{
+			Ball->m_PassThrough = false;
+			Ball->m_Color = glm::vec3(1.0f);
+		}
+		std::println("[Game] Power-up {} deactivated.", powerup->m_Type);
 	}
 }
 
@@ -469,7 +647,7 @@ void Game::UpdatePowerUps()
 {
 	for (auto& powerup : m_PowerUps)
 	{
-		const char* type = powerup->m_Type;
+		//auto p = powerup.get();
 		if (powerup->m_Alive)
 		{
 			powerup->m_Position += powerup->m_Velocity * m_DeltaTime;
@@ -477,76 +655,54 @@ void Game::UpdatePowerUps()
 		if (powerup->m_Activated)
 		{
 			powerup->m_Duration -= m_DeltaTime;
-			if (powerup->m_Duration <= 0)
+			PowerupDeactivate(powerup);
+		}
+	}
+
+	//// Remove inactive power-ups
+	m_PowerUps.erase(
+		// returns ptr to start of start
+		std::remove_if( // moves unwanted ele to back based on lambda predicate
+			m_PowerUps.begin(), m_PowerUps.end(),
+			[](const auto& powerup)
 			{
-				powerup->m_Activated = false;
-
-				if (AnotherPowerupActive(type))
-					continue; // do not deactivate if another of the same type is active
-				PowerupDeactivate(type);
-				std::println("[Game] Power-up {} deactivated.", powerup->m_Type);
+				//if (!(powerup->m_Alive || powerup->m_Activated))
+					//std::println("destroyed powerup: {}", powerup->m_Type);
+				return !(powerup->m_Alive || powerup->m_Activated);
 			}
-		}
-	}
+		),
+		m_PowerUps.end()
+	);
 }
 
-void Game::UpdateDeltaTime()
+bool contains_point(glm::vec2 pos, BoundinBox bb)
 {
-	currentFrame = static_cast<float>(glfwGetTime());
-	m_DeltaTime = currentFrame - lastFrame;
-	lastFrame = currentFrame;
-	// FPS counter
-	counter++;
-	if (currentFrame - fpsLastFrame >= 1.0f)
-	{
-		m_Window->SetTitle(
-			std::format(
-				"Breakout - FPS: {} | Level: {}",
-				counter, m_Level
-			).c_str());
-		counter = 0;
-		fpsLastFrame = currentFrame;
-	}
+	return bb.min <= pos && pos <= bb.max;
 }
 
-
-
-void Game::ProcessInput()
+void Game::CheckWithinCollisionBox()
 {
-	if (m_State == GameState::ACTIVE)
-	{
-		float velocity = m_DeltaTime * PLAYER_VELOCITY;
-		if (m_Keys[GLFW_KEY_D] && Player->m_Position.x + Player->m_Size.x <= m_Width)
+	m_DragVector.initialPos = glm::vec2(m_Mouse.x, m_Mouse.y);
+	for (auto* box : std::ranges::reverse_view(debugBoxes))
+		if (contains_point(m_DragVector.initialPos, box->m_bb))
 		{
-			Player->m_Position.x += velocity;
-			if (Ball->m_Stuck)
-				Ball->m_Position.x += velocity;
+			selected = box;
+			m_DragVector.centerPos = box->GetCenter();
+			return;
 		}
-		else if (m_Keys[GLFW_KEY_A] && Player->m_Position.x >= 0.0f)
-		{
-			Player->m_Position.x -= velocity;
-			if (Ball->m_Stuck)
-				Ball->m_Position.x -= velocity;
-		}
-
-		//std::cout << Player->m_Position.x << " " << Player->m_Position.y << std::endl;
-
-		if (m_Keys[GLFW_KEY_SPACE])
-			Ball->m_Stuck = false;
-
-		if (m_Keys[GLFW_KEY_ESCAPE])
-		{
-			WindowCloseEvent e{};
-			this->OnCloseGame(e);
-		}
-	}
+	selected = nullptr;
+	m_DragVector.centerPos = m_DragVector.initialPos;
 }
 
 void Game::Update()
 {
 	Ball->Move(m_DeltaTime, m_Width);
 	this->DoCollisions(*Ball);
+
 	Particles->Update(m_DeltaTime, *Ball, 1);
+
+	if (m_PowerUps.size() > 0)
+		this->UpdatePowerUps();
 
 	if (Effects->m_Shake)
 	{
@@ -567,6 +723,45 @@ void Game::Update()
 		this->ResetPlayer();
 		m_State = GameState::GAMEOVER;
 	}
+
+	for (const auto& p : m_PowerUps)
+	{
+		if (p->m_Alive && p->m_Position.y >= m_Height)
+		{
+			p->m_Alive = false;
+		}
+	}
+
+	if (m_IsDragging && selected)
+	{
+		glm::vec2 obj_center = m_Mouse + m_DragVector.GetOffset();
+		selected->m_Position = obj_center - selected->m_Size / 2.0;
+		selected->UpdateBoundingBox();
+	}
+}
+
+void Game::UpdateDeltaTime()
+{
+	currentFrame = static_cast<float>(glfwGetTime());
+	m_DeltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+	// FPS counter
+	//debug_frame++;
+	counter++;
+	if (currentFrame - fpsLastFrame >= 1.0f)
+	{
+		m_Window->SetTitle(
+			std::format(
+				"Breakout - FPS: {} | Level: {}",
+				counter, m_Level
+			).c_str());
+		counter = 0;
+		fpsLastFrame = currentFrame;
+	}
+	/*if (m_BrickCollision)
+	{
+		m_DeltaTime = 0;
+	}*/
 }
 
 void Game::Draw()
@@ -581,25 +776,38 @@ void Game::Draw()
 			glm::vec2(m_Width, m_Height),
 			glm::vec3(1.0));
 
-		// PLAYER/PADDLE
-		Player->Render(renderer);
-
 		// LEVELS
 		m_Levels[m_Level]->Draw(renderer);
+
+		// PLAYER/PADDLE
+		Player->Render(renderer);
 
 		// PARTICLES
 		Particles->Draw();
 		// BALL
 		Ball->Render(renderer);
+
+		// POWERUPS
+		for (const auto& powerup : m_PowerUps)
+		{
+			if (powerup->m_Alive)
+			{
+				powerup->Render(renderer);
+			}
+		}
+
+		// dont imclude in commit only debug purpose not a feature
+		/*for (const auto* box : debugBoxes)
+		{
+			box->Render(collisionBoxRenderer);
+		}*/
 	}
 }
-
 
 void Game::Run()
 {
 	while (m_State != GameState::TERMINATE)
 	{
-
 		this->UpdateDeltaTime();
 
 		Effects->BeginRender();
@@ -613,3 +821,56 @@ void Game::Run()
 		m_Window->SwapBuffers();
 	}
 }
+
+void Game::ProcessInput()
+{
+	if (m_State == GameState::ACTIVE)
+	{
+		float velocity = m_DeltaTime * PLAYER_VELOCITY;
+		if (m_Keys[GLFW_KEY_D] && Player->m_Position.x + Player->m_Size.x <= m_Width)
+		{
+			Player->m_Position.x += velocity;
+			Player->UpdateBoundingBox();
+			if (Ball->m_Stuck)
+				Ball->m_Position.x += velocity;
+		}
+		else if (m_Keys[GLFW_KEY_A] && Player->m_Position.x >= 0.0f)
+		{
+			Player->m_Position.x -= velocity;
+			if (Ball->m_Stuck)
+				Ball->m_Position.x -= velocity;
+		}
+
+		//std::cout << Player->m_Position.x << " " << Player->m_Position.y << std::endl;
+
+		if (m_Keys[GLFW_KEY_SPACE])
+			Ball->m_Stuck = false;
+
+		if (m_Keys[GLFW_KEY_ESCAPE])
+		{
+			WindowCloseEvent e{};
+			this->OnCloseGame(e);
+			//__debugbreak();
+			this;
+		}
+
+		/*if (m_Keys[GLFW_KEY_ENTER])
+		{
+			m_BrickCollision = false;
+		}*/
+	}
+}
+
+// Add this helper function at the top of Game.cpp or in an appropriate utility location
+void print_game_object_info(const char* label, const GameObject* obj) {
+	std::println("{}: pos=({}, {}), size=({}, {}), bb=({}, {})-({}, {}), id={}, type={}",
+		label,
+		obj->m_Alive ? "Alive" : "Dead",
+		obj->m_Position.x, obj->m_Position.y,
+		obj->m_Size.x, obj->m_Size.y,
+		obj->m_bb.min.x, obj->m_bb.min.y, obj->m_bb.max.x, obj->m_bb.max.y,
+		obj->GetID(),
+		typeid(*obj).name()
+	);
+}
+

@@ -4,14 +4,71 @@
 #include "object/GameObject.h"
 #include "utils/Random.h"
 
-ParticleGenerator::ParticleGenerator(Shader* shader, Texture2D* texture, unsigned int nrParticles)
+ParticleGenerator::ParticleGenerator(ShaderPtr shader, Texture2DPtr texture, unsigned int nrParticles)
 	:m_Shader(shader), m_Texture(texture), m_NrParticles(nrParticles), m_LastUsedParticle(0U)
 {
 	this->Init();
 }
 
+// Copy constructor
+ParticleGenerator::ParticleGenerator(const ParticleGenerator& other)
+	: m_Shader(other.m_Shader),
+	m_Texture(other.m_Texture),
+	m_Color(other.m_Color),
+	m_VAO(other.m_VAO),
+	m_NrParticles(other.m_NrParticles),
+	m_LastUsedParticle(other.m_LastUsedParticle),
+	m_Particles(other.m_Particles)
+{
+	// If you need to re-initialize OpenGL resources, do it here.
+}
+
+// Copy assignment operator
+ParticleGenerator& ParticleGenerator::operator=(const ParticleGenerator& other)
+{
+	if (this == &other)
+		return *this;
+	m_Shader = other.m_Shader;
+	m_Texture = other.m_Texture;
+	m_Color = other.m_Color;
+	m_VAO = other.m_VAO;
+	m_NrParticles = other.m_NrParticles;
+	m_LastUsedParticle = other.m_LastUsedParticle;
+	m_Particles = other.m_Particles;
+	// If you need to re-initialize OpenGL resources, do it here.
+	return *this;
+}
+
+ParticleGenerator::ParticleGenerator(ParticleGenerator&& p) noexcept
+	: m_Shader(p.m_Shader), m_Texture(std::move(p.m_Texture)), m_VAO(p.m_VAO)
+	, m_NrParticles(p.m_NrParticles), m_LastUsedParticle(p.m_LastUsedParticle), m_Color(p.m_Color)
+	, m_Particles(std::move(p.m_Particles))
+{
+	p.m_Shader = nullptr;
+}
+
+ParticleGenerator& ParticleGenerator::operator=(ParticleGenerator&& p) noexcept
+{
+	if (&p == this)
+		return *this;
+
+	m_Color = p.m_Color;
+	m_Shader = p.m_Shader;
+	m_Texture = p.m_Texture; // shared ptr can safely copy
+	m_VAO = p.m_VAO;
+	m_NrParticles = p.m_NrParticles;
+	m_LastUsedParticle = p.m_LastUsedParticle;
+	m_Particles = std::move(p.m_Particles);
+	p.m_Shader = nullptr;
+	return *this;
+}
+
 ParticleGenerator::~ParticleGenerator()
 {
+	m_Particles.clear();
+	m_Texture.reset();
+	m_Shader.reset();
+	glDeleteVertexArrays(1, &m_VAO);
 }
 
 void ParticleGenerator::Init()
@@ -77,11 +134,11 @@ void ParticleGenerator::Draw()
 
 void ParticleGenerator::RespawnParticle(Particle& particle, BallObject& obj, glm::vec2 offset)
 {
+	particle.Id = s_IdCounter++;
 	float angle = Random::get(0.f, 2.f * glm::pi<float>());
 	float edgeOffset = Random::get(0.f, obj.m_Size.x / 2.f);
 	glm::vec2 randDir = glm::vec2(cos(angle), sin(angle));
 	particle.Position = (obj.GetCenter() - particle.Size / 2.0f) + randDir * edgeOffset + offset;
-
 	particle.Size = glm::vec2(Random::get(5.f, 10.f));
 	particle.Velocity = 0.1f * obj.m_Velocity;
 	particle.Life = 1.0f;

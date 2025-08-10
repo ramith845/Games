@@ -1,6 +1,8 @@
 #pragma once
 #include "object/GameObject.h"
 #include "renderer/SpriteRenderer.h"
+#include <vector>
+#include <memory>
 
 enum class BrickType
 {
@@ -14,7 +16,6 @@ enum class BrickType
 
 class GameLevel
 {
-public:
 public:
 	GameLevel();
 	~GameLevel();

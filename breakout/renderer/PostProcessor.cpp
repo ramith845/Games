@@ -57,8 +57,15 @@ PostProcessor::PostProcessor(unsigned int width, unsigned int height)
 		{-offset,    0.0f}, {0.0f,    0.0f}, {offset,    0.0f},
 		{-offset, -offset}, {0.0f, -offset}, {offset, -offset}
 	};
-	m_PostProcessingShader->SetVec2fv("offset", 9, &offset);
+	m_PostProcessingShader->SetVec2fv("offsets", 9, &offsets[0][0]);
 
+	int edge_kernel[9] = {
+		-1, -1, -1,
+		-1,  8, -1,
+		-1, -1, -1
+	};
+	m_PostProcessingShader->Set1iv("edge_kernel", 9, edge_kernel);
+	
 	float blurKernel[9] = {
 		0.0625, 0.125, 0.0625,
 		 0.125,  0.25,  0.125,
@@ -67,6 +74,20 @@ PostProcessor::PostProcessor(unsigned int width, unsigned int height)
 	m_PostProcessingShader->Set1fv("blur_kernel", 9, blurKernel);
 
 	initRenderData();
+}
+
+PostProcessor::~PostProcessor()
+{
+	// std::println("[PostProcessor] Cleaning and deleting resources...");
+	glDeleteFramebuffers(1, &m_RenderFBO);
+	glDeleteRenderbuffers(1, &m_RenderColorRBO);
+	glDeleteRenderbuffers(1, &m_RenderDepthRBO);
+	glDeleteFramebuffers(1, &m_FBO);
+	delete m_ScreenTexture;
+	glDeleteVertexArrays(1, &m_ScreenVAO);
+	glDeleteBuffers(1, &m_ScreenVBO);
+	m_PostProcessingShader.reset();
+	// std::println("[PostProcessor] Cleaned up.");
 }
 
 void PostProcessor::initRenderData()
@@ -118,6 +139,8 @@ void PostProcessor::RenderScreen(float time)
 
 	m_PostProcessingShader->use()->SetFloat("time", time);
 	m_PostProcessingShader->SetBool("shake", m_Shake);
+	m_PostProcessingShader->SetBool("confuse", m_Confuse);
+	m_PostProcessingShader->SetBool("chaos", m_Chaos);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_ScreenTexture->GetID());
 

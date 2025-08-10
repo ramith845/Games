@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "PowerUp.h"
 
-const char* PowerUp::PowerTypeString(Type type)
+std::string_view PowerUp::PowerTypeString(Type type)
 {
 	switch (type) {
 	case Chaos:                 return "Chaos";

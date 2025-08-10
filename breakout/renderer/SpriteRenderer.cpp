@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "SpriteRenderer.h"
 
-SpriteRenderer::SpriteRenderer(Shader* shader)
+SpriteRenderer::SpriteRenderer(ShaderPtr shader)
 	: m_Shader(shader), m_VAO(0), m_VBO(0)
 {
 	Init();
@@ -9,12 +9,12 @@ SpriteRenderer::SpriteRenderer(Shader* shader)
 
 SpriteRenderer::~SpriteRenderer()
 {
-	std::println("[SpriteRenderer] Cleaning and deleting resources...");
-	std::println("	- deleting vertex buffer: {}", m_VBO);
+	//std::println("[SpriteRenderer] Cleaning and deleting resources...");
+	//std::println("	- deleting vertex buffer: {}", m_VBO);
 	glDeleteBuffers(1, &m_VBO);
-	std::println("	- deleting vertex array: {}", m_VAO);
+	//std::println("	- deleting vertex array: {}", m_VAO);
 	glDeleteVertexArrays(1, &m_VAO);
-	std::println("[SpriteRenderer] Cleaned up.");
+	//std::println("[SpriteRenderer] Cleaned up.");
 }
 
 void SpriteRenderer::Init()
@@ -45,8 +45,15 @@ void SpriteRenderer::Init()
 	glBindVertexArray(0);
 }
 
-void SpriteRenderer::DrawSprite(Texture2D* texture, glm::vec2 position, float rotate, glm::vec2 size, glm::vec3 color, bool isBrick)
+void SpriteRenderer::DrawSprite(
+	Texture2DPtr texture, glm::vec2 position, float rotate,
+	glm::vec2 size, glm::vec3 color, bool isBrick
+#ifdef BRICK_DEBUG
+	, bool hit
+#endif // BRICK_DEBUG
+)
 {
+
 	m_Shader->use();
 
 	glm::mat4 model(1.0);
@@ -65,9 +72,18 @@ void SpriteRenderer::DrawSprite(Texture2D* texture, glm::vec2 position, float ro
 	{
 		m_Shader->SetVec2("brick_size", size);
 	}
-
-	glActiveTexture(GL_TEXTURE0);
-	texture->Bind();
+#ifdef BRICK_DEBUG
+	m_Shader->SetBool("hit", hit);
+#endif // BRICK_DEBUG
+	if (texture)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		texture->Bind();
+	}
+	else
+	{
+		Texture2D::Unbind();
+	}
 
 	glBindVertexArray(m_VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

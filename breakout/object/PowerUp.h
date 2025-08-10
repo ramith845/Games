@@ -26,7 +26,7 @@ public:
 	};
 public:
 	PowerUp(const char* type, float duration,
-		glm::vec2 position, Texture2D* texture, glm::vec3 color,
+		glm::vec2 position, Texture2DPtr texture, glm::vec3 color,
 		glm::vec2 size = SIZE, glm::vec2 velocity = VELOCITY,
 		float rotation = 0.0f)
 		:GameObject(position, size, texture, false, color, velocity, rotation)
@@ -34,7 +34,7 @@ public:
 	{
 	}
 	PowerUp() = delete;
-	static const char* PowerTypeString(Type type);
+	static std::string_view PowerTypeString(Type type);
 	const char* m_Type;
 	float       m_Duration;
 	bool        m_Activated{ false };

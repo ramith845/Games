@@ -134,6 +134,12 @@
     <ClInclude Include="object\PowerUp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="event\MouseEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\3.3.shader.vert" />
@@ -154,6 +160,8 @@
     <None Include="shaders\3.3.particle.vert" />
     <None Include="shaders\3.3.aa_post.vert" />
     <None Include="shaders\3.3.aa_post.frag" />
+    <None Include="shaders\3.3.collision_shader.frag" />
+    <None Include="shaders\3.3.collision_shader.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\awesomeface.png">
@@ -172,6 +180,36 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="resources\particle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\background1_edit.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_chaos.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_confuse.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_decrease.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_increase.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_life.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_passthrough.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_slow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_speed.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\powerup_sticky.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

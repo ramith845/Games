@@ -8,14 +8,41 @@ Shader::Shader()
 
 Shader::~Shader()
 {
-	std::println("[Shader] Cleaning and deleting resources...");
-	std::println("	- deleting shader: {}", m_ID);
 	glDeleteProgram(m_ID);
-	std::println("[Shader] Cleaned up.");
+	if (m_VertexCodeSrc)
+	{
+		delete[] m_VertexCodeSrc;
+		m_VertexCodeSrc = nullptr;
+	}
+	if (m_FragmentCodeSrc)
+	{
+		delete[] m_FragmentCodeSrc;
+		m_FragmentCodeSrc = nullptr;
+	}
 }
 
+bool CopyShaderSource(const char* src, const char** dest)
+{
+	*dest = new char[strlen(src) + 1];
+	errno_t result = strcpy_s(const_cast<char*>(*dest), strlen(src) + 1, src);
+	if (result != 0) {
+		std::cerr << "[Shader][ERROR] Failed to copy shader src\n";
+		return false;
+	}
+	return true;
+}
 bool Shader::Compile(const char* vertexCodeSrc, const char* fragmentCodeSrc, const char* geometryShaderSrc)
 {
+	if (!vertexCodeSrc || !fragmentCodeSrc
+		|| !CopyShaderSource(vertexCodeSrc, &m_VertexCodeSrc)
+		|| !CopyShaderSource(fragmentCodeSrc, &m_FragmentCodeSrc)
+		)
+	{
+		std::cerr << "[Shader] Error: Vertex and Fragment shader source code must be provided." << std::endl;
+		return false;
+	}
+
+
 	bool compiled{ true };
 	unsigned int vShader{};
 	vShader = glCreateShader(GL_VERTEX_SHADER);
@@ -65,6 +92,11 @@ void Shader::SetInt(const std::string& name, int value) const
 void Shader::SetFloat(const std::string& name, float value) const
 {
 	glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value);
+}
+
+void Shader::Set1iv(const std::string& name, int count, int* value) const
+{
+	glUniform1iv(glGetUniformLocation(m_ID, name.c_str()), count, value);
 }
 
 void Shader::Set1fv(const std::string& name, int count, float* value) const

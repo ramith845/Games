@@ -8,6 +8,7 @@ uniform vec3 spriteColor;
 uniform sampler2D image;
 uniform bool is_brick;
 uniform vec2 brick_size;
+uniform bool hit;
 
 // Optional: pass time for animations
 uniform float time;
@@ -69,6 +70,9 @@ void main()
 
     color += brightnes_mask*1.1;
     // Final color
-    FragColor = vec4(color, 1.0) * texture(image, TexCoords);
+    vec4 debug = vec4(1.0);
+    FragColor =  debug * vec4(spriteColor, 1.0) * texture(image, TexCoords);
+    //if(hit)
+    //  FragColor = vec4(1.0, 0.2, 0.1, 1.0);
 
 }

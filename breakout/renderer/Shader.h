@@ -1,5 +1,5 @@
 #pragma once
-#include "glm.hpp"
+#include "glm/glm.hpp"
 
 class Shader
 {
@@ -21,6 +21,7 @@ public:
 	void SetInt(const std::string& name, int value) const;
 	void SetFloat(const std::string& name, float value) const;
 	void Set1fv(const std::string& name, int count, float* value) const;
+	void Set1iv(const std::string& name, int count, int* value) const;
 	void SetVec2(const std::string& name, glm::vec2 color) const;
 	void SetVec2fv(const std::string& name, int count, float* value) const;
 	void SetVec3(const std::string& name, glm::vec3 color) const;
@@ -30,4 +31,8 @@ private:
 	bool CheckCompileErrors(unsigned int ID, Type type) const;
 private:
 	unsigned int m_ID;
+	const char* m_VertexCodeSrc{ nullptr };
+	const char* m_FragmentCodeSrc{ nullptr };
 };
+
+using ShaderPtr = std::shared_ptr<Shader>;

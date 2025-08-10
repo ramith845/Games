@@ -87,7 +87,44 @@ bool Window::Init()
 		}
 	);
 
-	glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
+	glfwSetMouseButtonCallback(m_Window,
+		[](GLFWwindow* window, int button, int action, int mods)
+		{
+			mods;
+			WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+			switch (action)
+			{
+			case GLFW_PRESS:
+			{
+				MouseBtnPressedEvent event(button);
+				data->CBEventfn(event);
+				break;
+			}
+			case GLFW_RELEASE:
+			{
+				MouseBtnReleasedEvent event(button);
+				data->CBEventfn(event);
+				break;
+			}
+			default:
+			{
+				std::println("Event type not recognized!");
+				break;
+			}
+			}
+		}
+	);
+
+	glfwSetCursorPosCallback(m_Window,
+		[](GLFWwindow* window, double xpos, double ypos)
+		{
+			WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+			MouseMovedEvent e((float)xpos, (float)ypos);
+			data->CBEventfn(e);
+		});
+
+	glfwSetWindowCloseCallback(m_Window, 
+		[](GLFWwindow* window)
 		{
 			WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			WindowCloseEvent e{};

@@ -16,7 +16,7 @@ class Event
 public:
 	virtual EventType GetEventType() const = 0;
 	virtual const char* GetEventName() const = 0;
-
+	virtual std::string ToString() const { return GetEventName(); }
 	inline bool IsHandled() { return m_Handled; }
 protected:
 	bool m_Handled{ false };

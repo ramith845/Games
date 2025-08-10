@@ -15,13 +15,18 @@ public:
 		unsigned int maxFilter = GL_LINEAR);
 
 	Texture2D() = delete;
+	Texture2D(const Texture2D& texture) = delete;
+	Texture2D& operator=(const Texture2D& texture) = delete;
+
+
 	~Texture2D();
 
 
 	unsigned int GetID() const;
 	void Generate(int width, int height, const unsigned char* data);
-	void TextureMipMap();
+	void TextureMipMap() const;
 	void Bind() const;
+	static void Unbind();
 
 
 private:
@@ -36,4 +41,6 @@ private:
 	unsigned int m_Width{};
 	unsigned int m_Height{};
 };
+
+using Texture2DPtr = std::shared_ptr<Texture2D>;
 

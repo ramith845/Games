@@ -25,10 +25,10 @@ Texture2D::Texture2D(
 
 Texture2D::~Texture2D()
 {
-	std::println("[Texture2D] Cleaning and deleting resources...");
-	std::println("	- deleting texture: {}", m_ID);
+	//std::println("[Texture2D] Cleaning and deleting resources...");
+	//std::println("	- deleting texture: {}", m_ID);
 	glDeleteTextures(1, &m_ID);
-	std::println("[Texture2D] Cleaned up.");
+	//std::println("[Texture2D] Cleaned up.");
 }
 
 unsigned int Texture2D::GetID() const
@@ -38,6 +38,8 @@ unsigned int Texture2D::GetID() const
 
 void Texture2D::Generate(int width, int height, const unsigned char* data)
 {
+	if (m_ID == 0)
+		return;
 	m_Width = static_cast<unsigned int>(width);
 	m_Height = static_cast<unsigned int>(height);
 
@@ -50,7 +52,7 @@ void Texture2D::Generate(int width, int height, const unsigned char* data)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Texture2D::TextureMipMap()
+void Texture2D::TextureMipMap() const
 {
 	Bind();
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -60,3 +62,9 @@ void Texture2D::Bind() const
 {
 	glBindTexture(GL_TEXTURE_2D, m_ID);
 }
+
+void Texture2D::Unbind()
+{
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
