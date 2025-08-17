@@ -63,13 +63,16 @@
     <ClCompile Include="object\BallObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="object\ParticleGenerator.cpp">
+    <ClCompile Include="manager\ParticleGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="renderer\PostProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="object\PowerUp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\CollisionManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,7 +128,7 @@
     <ClInclude Include="object\Particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="object\ParticleGenerator.h">
+    <ClInclude Include="manager\ParticleGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="renderer\PostProcessor.h">
@@ -138,6 +141,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="event\MouseEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\CollisionManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\CollisionDebugSpriteRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

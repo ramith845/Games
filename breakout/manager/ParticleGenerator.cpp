@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ParticleGenerator.h"
-#include "Particle.h"
+#include "object/Particle.h"
 #include "object/GameObject.h"
 #include "utils/Random.h"
 

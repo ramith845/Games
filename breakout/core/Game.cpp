@@ -4,9 +4,11 @@
 #include "object/PowerUp.h"
 #include "object/GameObject.h"
 #include "object/BallObject.h"
-#include "object/ParticleGenerator.h"
+#include "manager/ParticleGenerator.h"
 #include "manager/ResourceManager.h"
+#include "manager/CollisionManager.h"
 #include "renderer/SpriteRenderer.h"
+#include "renderer/CollisionDebugSpriteRenderer.h"
 #include "renderer/PostProcessor.h"
 #include "utils/Random.h"
 #include "utils/Utility.h"
@@ -19,14 +21,16 @@ BallObject* Ball;
 ParticleGenerator* Particles;
 PostProcessor* Effects;
 
-SpriteRenderer* collisionBoxRenderer;
-GameObject* collisionBox1;
-GameObject* collisionBox2;
-std::vector<GameObject*> debugBoxes;
-GameObject* selected{ nullptr };
+//CollisionDebugSpriteRenderer* collisionBoxRenderer;
+//GameObject* collisionBox1;
+//GameObject* collisionBox2;
+//std::vector<GameObject*> debugBoxes;
+//GameObject* selected{ nullptr };
+//CollisionManager::MovableObj_t movableObj{ std::nullopt };
+CollisionManager cm;
 
 void print_game_object_info(const char* label, const GameObject* obj);
-void init_collision_boxes(glm::mat4 projection);
+//void init_collision_boxes(glm::mat4 projection);
 void load_assets(glm::mat4 projection);
 void load_all_levels(Game& game);
 bool contains_point(glm::vec2 pos, BoundinBox bb);
@@ -76,20 +80,14 @@ Game::Game(int width, int height)
 
 Game::~Game()
 {
-	std::println("[Game] Cleaning up and deleting resources...");
-
-	std::println("	- deleting renderer(sprite)");
 	delete renderer;
-
-	std::println("	- deleting Player(Object)");
 	delete Player;
-
-	std::println("	- deleting Ball(Object)");
 	delete Ball;
-
 	delete Particles;
-
 	delete Effects;
+	/*delete collisionBoxRenderer;
+	delete collisionBox1;
+	delete collisionBox2;*/
 
 	ResourceManager::Cleanup();
 
@@ -106,22 +104,22 @@ int Game::Init()
 
 	InitPlayer();
 
-	init_collision_boxes(projection);
+	//init_collision_boxes(projection);
 
 	return 1;
 }
 
-void init_collision_boxes(glm::mat4 projection)
-{
-	ResourceManager::LoadShader("3.3.collision_shader.vert", "3.3.collision_shader.frag", "collision_shader");
-	GET_SHADER("collision_shader")->use()->SetMatrix4("projection", projection);
-
-	collisionBoxRenderer = new SpriteRenderer(GET_SHADER("collision_shader"));
-	collisionBox1 = new GameObject(glm::vec2{ 20.f, 50.f }, glm::vec2{ 100.f, 50.f }, nullptr, false, glm::vec3(1.0f, 0.2f, 0.2f));
-	collisionBox2 = new GameObject(glm::vec2{ 200.f, 50.f }, glm::vec2{ 100.f, 50.f }, nullptr, false, glm::vec3(0.3f, 1.0f, 0.5f));
-	debugBoxes.push_back(collisionBox1);
-	debugBoxes.push_back(collisionBox2);
-}
+//void init_collision_boxes(glm::mat4 projection)
+//{
+//	ResourceManager::LoadShader("3.3.collision_shader.vert", "3.3.collision_shader.frag", "collision_shader");
+//	GET_SHADER("collision_shader")->use()->SetMatrix4("projection", projection);
+//
+//	collisionBoxRenderer = new CollisionDebugSpriteRenderer(GET_SHADER("collision_shader"));
+//	collisionBox1 = new BallObject(glm::vec2{ 20.f, 50.f }, 50.f, nullptr);
+//	collisionBox2 = new BallObject(glm::vec2{ 120.f, 50.f }, 50.f, nullptr);
+//	debugBoxes.push_back(collisionBox1);
+//	debugBoxes.push_back(collisionBox2);
+//}
 
 void load_assets(glm::mat4 projection)
 {
@@ -181,7 +179,7 @@ void Game::InitPlayer()
 		playerInitialPos,
 		INITIAL_PLAYER_SIZE,
 		GET_TEXTURE("paddle"),
-		true,
+		ObjectType::Player,
 		glm::vec3(1.0),
 		glm::vec2(PLAYER_VELOCITY) };
 	m_InitPlayer = std::make_unique<GameObject>(*Player);
@@ -253,14 +251,16 @@ bool Game::OnMouseBtnRelease(MouseBtnReleasedEvent& e)
 {
 	m_IsDragging = false;
 	std::println("{}", e.ToString());
-	selected = nullptr;
+	/*if (selected)
+		movableObj = std::reference_wrapper<GameObject>(*selected);
+	selected = nullptr;*/
 	return true;
 }
 
 bool Game::OnMouseBtnPress(MouseBtnPressedEvent& e)
 {
 	m_IsDragging = true;
-	CheckWithinCollisionBox();
+	//CheckWithinCollisionBox();
 	std::println("{}", e.ToString());
 	return true;
 }
@@ -330,12 +330,10 @@ void activate_power_up(PowerUp& powerup, Game& game)
 		auto fixedCenter = Player->GetCenter().x;
 		auto newBallRelOffset = (Ball->GetCenter().x - fixedCenter) / PLAYER_SIZE_PWRUP_FACTOR;
 		Player->m_Size.x = INITIAL_PLAYER_SIZE.x / PLAYER_SIZE_PWRUP_FACTOR;
-		Player->m_Position.x = fixedCenter - Player->m_Size.x / 2.0f;
-		Player->UpdateBoundingBox();
+		Player->SetPosX(fixedCenter - Player->m_Size.x / 2.0f);
 		if (Ball->m_Stuck)
 		{
-			Ball->m_Position.x = fixedCenter + newBallRelOffset - Ball->m_Radius;
-			Ball->UpdateBoundingBox();
+			Ball->SetPosX(fixedCenter + newBallRelOffset - Ball->m_Radius);
 		}
 	}
 	else if (powerup.m_Type == PWR_TYPE(IncreaseBallVelocity))
@@ -359,12 +357,10 @@ void activate_power_up(PowerUp& powerup, Game& game)
 		auto fixedCenter = Player->GetCenter().x;
 		auto newBallRelOffset = (Ball->GetCenter().x - fixedCenter) * PLAYER_SIZE_PWRUP_FACTOR;
 		Player->m_Size.x = INITIAL_PLAYER_SIZE.x * PLAYER_SIZE_PWRUP_FACTOR;
-		Player->m_Position.x = fixedCenter - Player->m_Size.x / 2.0f;
-		Player->UpdateBoundingBox();
+		Player->SetPosX(fixedCenter - Player->m_Size.x / 2.0f);
 		if (Ball->m_Stuck)
 		{
-			Ball->m_Position.x = fixedCenter + newBallRelOffset - Ball->m_Radius;
-			Ball->UpdateBoundingBox();
+			Ball->SetPosX(fixedCenter + newBallRelOffset - Ball->m_Radius);
 		}
 	}
 	else if (powerup.m_Type == PWR_TYPE(StickyPaddle))
@@ -449,17 +445,11 @@ bool check_collision(GameObject& one, GameObject& two)
 
 bool handle_brick_collision(Game& game, BallObject& ball, GameObject* box)
 {
-	game;
+	CollisionManager::MovableObj_t movableObj = std::ref(ball);
 	// circle vs AABB collision check,
-	Collision_t collision = check_collision(ball, *box);
+	CollisionManager::SATResult_t collision = cm.SATCollisionTest(*box, ball, movableObj);
 	if (std::get<0>(collision))
 	{
-#ifdef BRICK_DEBUG
-		if (!box->m_Solid)
-			box->m_Hit = true;
-		//game.m_BrickCollision = true;
-#endif // BRICK_DEBUG
-
 		if (!box->m_Solid)
 		{
 			game.m_SoundEngine->play2D(BLEEP_SFX_PATH, NO_LOOP);
@@ -474,29 +464,17 @@ bool handle_brick_collision(Game& game, BallObject& ball, GameObject* box)
 		}
 
 		// handle collision response
-		Direction dir = std::get<1>(collision);
-		dir;
-		glm::vec2 diff = std::get<2>(collision);
+		Direction dir = collision_direction(std::get<1>(collision));
 		// skip if pass through and breakable box, otherwise reflect
 		if (!(Ball->m_PassThrough && !box->m_Solid))
 		{
 			if (dir == LEFT || dir == RIGHT)
 			{
-				float penetration = ball.m_Radius - std::abs(diff.x);
 				ball.m_Velocity.x *= -1;
-				if (dir == LEFT)
-					ball.m_Position.x -= penetration;
-				else
-					ball.m_Position.x += penetration;
 			}
 			else
 			{
-				float penetration = ball.m_Radius - std::abs(diff.y);
 				ball.m_Velocity.y *= -1;
-				if (dir == UP)
-					ball.m_Position.y -= penetration;
-				else
-					ball.m_Position.y += penetration;
 			}
 		}
 		return true;
@@ -546,8 +524,8 @@ void Game::DoCollisions(BallObject& ball)
 	{
 		if (powerup->m_Alive)
 		{
-			Player->UpdateBoundingBox(); // important to do this
-			powerup->UpdateBoundingBox();// important AAAB depends on this
+			powerup->SetPos(powerup->GetPos()); // triggers bounding box update
+			Player->SetPos(Player->GetPos()); // triggers bounding box update
 			if (check_collision(*Player, *powerup.get()))
 			{
 				m_SoundEngine->play2D(POWERUP_SFX_PATH, NO_LOOP);
@@ -581,8 +559,8 @@ void Game::ResetPlayer()
 	glm::vec2 playerInitialPos = glm::vec2((m_Width - INITIAL_PLAYER_SIZE.x) / 2.0, m_Height - INITIAL_PLAYER_SIZE.y);
 	glm::vec2 ballInitialPos{ playerInitialPos.x + INITIAL_PLAYER_SIZE.x / 2.0f - BALL_RADIUS,  playerInitialPos.y - 2.f * BALL_RADIUS };
 	Player->m_Size = INITIAL_PLAYER_SIZE;
-	Player->m_Position = playerInitialPos;
-	Ball->m_Position = ballInitialPos;
+	Player->SetPos(playerInitialPos);
+	Ball->SetPos(ballInitialPos);
 	Ball->m_Velocity = INITIAL_BALL_VELOCITY;
 	Ball->m_Stuck = true;
 }
@@ -650,7 +628,8 @@ void Game::UpdatePowerUps()
 		//auto p = powerup.get();
 		if (powerup->m_Alive)
 		{
-			powerup->m_Position += powerup->m_Velocity * m_DeltaTime;
+			powerup->SetPos(powerup->GetPos() + powerup->m_Velocity * m_DeltaTime);
+
 		}
 		if (powerup->m_Activated)
 		{
@@ -680,7 +659,7 @@ bool contains_point(glm::vec2 pos, BoundinBox bb)
 	return bb.min <= pos && pos <= bb.max;
 }
 
-void Game::CheckWithinCollisionBox()
+/*void Game::CheckWithinCollisionBox()
 {
 	m_DragVector.initialPos = glm::vec2(m_Mouse.x, m_Mouse.y);
 	for (auto* box : std::ranges::reverse_view(debugBoxes))
@@ -692,7 +671,7 @@ void Game::CheckWithinCollisionBox()
 		}
 	selected = nullptr;
 	m_DragVector.centerPos = m_DragVector.initialPos;
-}
+}*/
 
 void Game::Update()
 {
@@ -711,7 +690,7 @@ void Game::Update()
 			Effects->m_Shake = false;
 	}
 
-	if (Ball->m_Position.y >= this->m_Height) // did ball reach bottom edge?
+	if (Ball->GetPos().y >= this->m_Height) // did ball reach bottom edge?
 	{
 		m_Lives--;
 		this->ResetPlayer();
@@ -726,18 +705,25 @@ void Game::Update()
 
 	for (const auto& p : m_PowerUps)
 	{
-		if (p->m_Alive && p->m_Position.y >= m_Height)
+		if (p->m_Alive && p->GetPos().y >= m_Height)
 		{
 			p->m_Alive = false;
 		}
 	}
 
-	if (m_IsDragging && selected)
+	/*if (m_IsDragging && selected)
 	{
 		glm::vec2 obj_center = m_Mouse + m_DragVector.GetOffset();
-		selected->m_Position = obj_center - selected->m_Size / 2.0;
-		selected->UpdateBoundingBox();
-	}
+		selected->SetPos(obj_center - selected->m_Size / 2.0f);
+	}*/
+
+	/*CollisionManager cm;
+	CollisionManager::SATResult_t result = cm.SATCollisionTest(*collisionBox1, *collisionBox2, movableObj);
+	if (std::get<0>(result) && movableObj)
+	{
+		std::println("movableObj: not nullopt");
+		movableObj->get().m_Color = glm::vec3(0.0f, 1.0f, 0.0f);
+	}*/
 }
 
 void Game::UpdateDeltaTime()
@@ -799,7 +785,12 @@ void Game::Draw()
 		// dont imclude in commit only debug purpose not a feature
 		/*for (const auto* box : debugBoxes)
 		{
-			box->Render(collisionBoxRenderer);
+			if (!box) continue;
+			auto ball = dynamic_cast<const BallObject*>(box);
+			if (ball)
+				const_cast<BallObject*>(ball)->Render(collisionBoxRenderer);
+			else
+				box->Render(collisionBoxRenderer);
 		}*/
 	}
 }
@@ -827,18 +818,17 @@ void Game::ProcessInput()
 	if (m_State == GameState::ACTIVE)
 	{
 		float velocity = m_DeltaTime * PLAYER_VELOCITY;
-		if (m_Keys[GLFW_KEY_D] && Player->m_Position.x + Player->m_Size.x <= m_Width)
+		if (m_Keys[GLFW_KEY_D] && Player->GetPos().x + Player->m_Size.x <= m_Width)
 		{
-			Player->m_Position.x += velocity;
-			Player->UpdateBoundingBox();
+			Player->SetPosX(Player->GetPos().x + velocity);
 			if (Ball->m_Stuck)
-				Ball->m_Position.x += velocity;
+				Ball->SetPosX(Ball->GetPos().x + velocity);
 		}
-		else if (m_Keys[GLFW_KEY_A] && Player->m_Position.x >= 0.0f)
+		else if (m_Keys[GLFW_KEY_A] && Player->GetPos().x >= 0.0f)
 		{
-			Player->m_Position.x -= velocity;
+			Player->SetPosX(Player->GetPos().x - velocity);
 			if (Ball->m_Stuck)
-				Ball->m_Position.x -= velocity;
+				Ball->SetPosX(Ball->GetPos().x - velocity);
 		}
 
 		//std::cout << Player->m_Position.x << " " << Player->m_Position.y << std::endl;
@@ -866,7 +856,7 @@ void print_game_object_info(const char* label, const GameObject* obj) {
 	std::println("{}: pos=({}, {}), size=({}, {}), bb=({}, {})-({}, {}), id={}, type={}",
 		label,
 		obj->m_Alive ? "Alive" : "Dead",
-		obj->m_Position.x, obj->m_Position.y,
+		obj->GetPos().x, obj->GetPos().y,
 		obj->m_Size.x, obj->m_Size.y,
 		obj->m_bb.min.x, obj->m_bb.min.y, obj->m_bb.max.x, obj->m_bb.max.y,
 		obj->GetID(),

@@ -29,7 +29,7 @@ public:
 		glm::vec2 position, Texture2DPtr texture, glm::vec3 color,
 		glm::vec2 size = SIZE, glm::vec2 velocity = VELOCITY,
 		float rotation = 0.0f)
-		:GameObject(position, size, texture, false, color, velocity, rotation)
+		:GameObject(position, size, texture, ObjectType::PowerUp, color, velocity, rotation)
 		, m_Type(type), m_Duration(duration), m_Activated()
 	{
 	}

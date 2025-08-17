@@ -47,11 +47,7 @@ void SpriteRenderer::Init()
 
 void SpriteRenderer::DrawSprite(
 	Texture2DPtr texture, glm::vec2 position, float rotate,
-	glm::vec2 size, glm::vec3 color, bool isBrick
-#ifdef BRICK_DEBUG
-	, bool hit
-#endif // BRICK_DEBUG
-)
+	glm::vec2 size, glm::vec3 color, bool isBrick)
 {
 
 	m_Shader->use();
@@ -72,9 +68,7 @@ void SpriteRenderer::DrawSprite(
 	{
 		m_Shader->SetVec2("brick_size", size);
 	}
-#ifdef BRICK_DEBUG
-	m_Shader->SetBool("hit", hit);
-#endif // BRICK_DEBUG
+
 	if (texture)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -88,4 +82,9 @@ void SpriteRenderer::DrawSprite(
 	glBindVertexArray(m_VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
+}
+
+ShaderPtr SpriteRenderer::GetShader() const
+{
+	return m_Shader;
 }

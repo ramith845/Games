@@ -107,7 +107,7 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 	//float rot{ 0.0f };
 	glm::vec3 color{ 1.0f };
 	const char* textureName{};
-	bool solid{ false };
+	ObjectType objType{ ObjectType::None };
 
 	//std::println("LEVEL: ");
 	int y{ 0 };
@@ -131,35 +131,35 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 			{
 				color = BRICK_COLOR;
 				textureName = "block_solid";
-				solid = true;
+				objType = ObjectType::SolidBrick;
 				break;
 			}
 			case BrickType::RED_BRICK:
 			{
 				color = RED_COLOR;
 				textureName = "block";
-				solid = false;
+				objType = ObjectType::Brick;
 				break;
 			}
 			case BrickType::BLUE_BRICK:
 			{
 				color = BLUE_COLOR;
 				textureName = "block";
-				solid = false;
+				objType = ObjectType::Brick;
 				break;
 			}
 			case BrickType::PURPLE_BRICK:
 			{
 				color = PURPLE_COLOR;
 				textureName = "block";
-				solid = false;
+				objType = ObjectType::Brick;
 				break;
 			}
 			case BrickType::GREEN_BRICK:
 			{
 				color = GREEN_COLOR;
 				textureName = "block";
-				solid = false;
+				objType = ObjectType::Brick;
 				break;
 			}
 			default:
@@ -167,7 +167,7 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 			}
 
 			pos = glm::vec2(x * size.x, y * size.y);
-			m_Entities.push_back(new GameObject(pos, size, GET_TEXTURE(textureName), solid, color));
+			m_Entities.push_back(new GameObject(pos, size, GET_TEXTURE(textureName), objType, color, glm::vec2(0.f), 0.f));
 
 			x++;
 		}
@@ -189,7 +189,7 @@ void GameLevel::Draw(SpriteRenderer* renderer)
 		if (ent->m_Alive)
 #endif
 			renderer->DrawSprite(
-				ent->m_Texture, ent->m_Position,
+				ent->m_Texture, ent->GetPos(),
 				ent->m_Rotation, ent->m_Size,
 				ent->m_Color, true
 #ifdef BRICK_DEBUG  

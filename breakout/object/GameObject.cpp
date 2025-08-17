@@ -5,9 +5,11 @@
 
 unsigned int s_IdCounter{ 0 };
 
-GameObject::GameObject(glm::vec2 position, glm::vec2 size, Texture2DPtr texture, bool solid,
+GameObject::GameObject(glm::vec2 position, glm::vec2 size, Texture2DPtr texture, ObjectType type,
 	glm::vec3 color, glm::vec2 velocity, float rotation)
-	: m_Position(position), m_Size(size), m_Texture(texture), m_Color(color), m_Alive(true), m_Solid(solid), m_Velocity(velocity), m_Rotation(rotation)
+	: m_Position(position), m_Size(size), m_Texture(texture), m_Color(color)
+	, m_Alive(true), m_Solid(type == ObjectType::SolidBrick ? 1 : 0), m_Velocity(velocity), m_Rotation(rotation)
+	, m_Type(type), m_ID(nullptr)
 {
 	std::string tmp = std::format("{}{}_{}{}{}_{}_{}{}",
 		position.x, position.y,
@@ -106,7 +108,6 @@ GameObject& GameObject::operator=(GameObject&& other) noexcept
 	return *this;
 }
 
-
 GameObject::~GameObject()
 {
 	// std::println("[GameObject] Cleaning and deleting resources...");
@@ -114,9 +115,10 @@ GameObject::~GameObject()
 	// std::println("[GameObject] Cleaned up.");
 }
 
-void GameObject::Render(SpriteRenderer* renderer) const
+
+void GameObject::ResetSidCounter()
 {
-	renderer->DrawSprite(m_Texture, m_Position, m_Rotation, m_Size, m_Color, m_Solid);
+	s_IdCounter = 0;
 }
 
 const char* GameObject::GetID() const
@@ -124,18 +126,46 @@ const char* GameObject::GetID() const
 	return m_ID;
 }
 
-void GameObject::ResetSidCounter()
+const ObjectType GameObject::GetType() const
 {
-	s_IdCounter = 0;
+	return m_Type;
 }
 
-glm::vec2 GameObject::GetCenter()
+glm::vec2 GameObject::GetPos() const
+{
+	return m_Position;
+}
+
+glm::vec2 GameObject::GetCenter() const
 {
 	return glm::vec2{ m_Position.x + m_Size.x / 2, m_Position.y + m_Size.y / 2 };
+}
+
+void GameObject::SetPos(glm::vec2 position)
+{
+	m_Position = position;
+	UpdateBoundingBox();
+}
+
+void GameObject::SetPosX(float x)
+{
+	m_Position.x = x;
+	UpdateBoundingBox();
+}
+
+void GameObject::SetPosY(float y)
+{
+	m_Position.y = y;
+	UpdateBoundingBox();
 }
 
 void GameObject::UpdateBoundingBox()
 {
 	m_bb.min = m_Position;
 	m_bb.max = m_Position + m_Size;
+}
+
+void GameObject::Render(SpriteRenderer* renderer) const
+{
+	renderer->DrawSprite(m_Texture, m_Position, m_Rotation, m_Size, m_Color, m_Solid);
 }
