@@ -19,50 +19,50 @@ extern "C" {
 /*#ifdef _DEBUG
 // Force break on specific allocation numbers
 static struct AllocHook {
-    AllocHook() {
-        _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-        //_CrtSetBreakAlloc(174);
-        //_CrtSetBreakAlloc(175);
-        //_CrtSetBreakAlloc(176);
-        //_CrtSetBreakAlloc(177);
-    }
+	AllocHook() {
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		//_CrtSetBreakAlloc(174);
+		//_CrtSetBreakAlloc(175);
+		//_CrtSetBreakAlloc(176);
+		//_CrtSetBreakAlloc(177);
+	}
 } allocHook;
 #endif
 */
 
 int main()
 {
-/*#ifdef _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+	/*#ifdef _DEBUG
 
-	// Try breaking on different allocation numbers that might show up in leaks
+		// Try breaking on different allocation numbers that might show up in leaks
 
-	// Take memory snapshot before game starts
-	_CrtMemState s1, s2, s3;
-	_CrtMemCheckpoint(&s1);
-#endif // _DEBUG
-*/
+		// Take memory snapshot before game starts
+		_CrtMemState s1, s2, s3;
+		_CrtMemCheckpoint(&s1);
+	#endif // _DEBUG
+	*/
 
 	// GAME BLOCK
 	{
 		std::unique_ptr<Game> game = std::make_unique<Game>(SCR_WIDTH, SCR_HEIGHT);
 		game->Init();
-	//_CrtMemCheckpoint(&s2);
+		//_CrtMemCheckpoint(&s2);
 		game->Run();
 	}
 
-/*#ifdef _DEBUG
-	// Take snapshot after game ends
-	_CrtMemCheckpoint(&s3);
+	/*#ifdef _DEBUG
+		// Take snapshot after game ends
+		_CrtMemCheckpoint(&s3);
 
-	// Show difference between snapshots
-	//if (_CrtMemDifference(&s3, &s1, &s2))
-		//_CrtMemDumpStatistics(&s3);
+		// Show difference between snapshots
+		//if (_CrtMemDifference(&s3, &s1, &s2))
+			//_CrtMemDumpStatistics(&s3);
 
-#endif // _DEBUG
-*/
+	#endif // _DEBUG
+	*/
 
 	_CrtDumpMemoryLeaks();
 	//std::cin.get();

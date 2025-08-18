@@ -9,6 +9,8 @@
 #include "event/MouseEvent.h"  
 #include "event/WindowEvent.h"  
 #include "renderer/PostProcessor.h"
+#include "renderer/SpriteRenderer.h"
+#include "manager/ParticleGenerator.h"
 #include "irrKlang/irrKlang.h"
 
 #include <memory>  
@@ -31,7 +33,7 @@ enum class GameState
 
 class Window;
 
-struct DragObject
+/*struct DragObject
 {
 	glm::vec2 initialPos{};
 	glm::vec2 centerPos{};
@@ -39,7 +41,7 @@ struct DragObject
 	{
 		return centerPos - initialPos;
 	}
-};
+};*/
 
 class Game
 {
@@ -55,9 +57,9 @@ public:
 	void Update();
 	void Draw();
 	void Run();
-	friend void activate_power_up(PowerUp& powerup, Game& game);
+	friend void activate_power_up(Game& game, PowerUp& powerup);
 	friend void load_all_levels(Game& game);
-	friend bool handle_brick_collision(Game& game, BallObject& ball, GameObject* box);
+	friend bool handle_brick_collision(Game& game, GameObject& box);
 
 private:
 	//Collision_t check_collision(BallObject& a, GameObject& b);
@@ -78,23 +80,31 @@ private:
 	void ResetLevel();
 	void UpdatePowerUps();
 	void UpdateDeltaTime();
-	void CheckWithinCollisionBox();
+
+public:
+	std::unique_ptr<SpriteRenderer> renderer;
+	std::unique_ptr<GameObject> Player;
+	std::unique_ptr<BallObject> Ball;
+	std::unique_ptr<ParticleGenerator> Particles;
+	std::unique_ptr<PostProcessor> Effects;
 
 private:
 	unsigned int m_Width, m_Height;
 	std::unique_ptr<Window> m_Window; // Corrected declaration to use a pointer  
-	GameState m_State;
-	std::vector<std::unique_ptr<GameLevel>>  m_Levels;
-	std::vector<std::unique_ptr<PowerUp>>  m_PowerUps;
-	unsigned int m_Level{};
 	int m_Lives{ 100 };
 	bool m_Keys[1024];
 	float m_DeltaTime{};
-	//bool m_BrickCollision{ false };
+
+	GameState m_State;
+
+	unsigned int m_Level{};
+	std::vector<std::unique_ptr<GameLevel>>  m_Levels;
+	std::vector<std::unique_ptr<PowerUp>>  m_PowerUps;
+
 	std::unique_ptr<GameObject> m_InitPlayer;
 	std::unique_ptr<BallObject> m_InitBall;
+
 	IrrKlangEnginePtr_t m_SoundEngine{ nullptr, nullptr };
-	bool m_IsDragging{ false };
+	//bool m_IsDragging{ false };
 	glm::vec2 m_Mouse{};
-	DragObject m_DragVector{};
 };

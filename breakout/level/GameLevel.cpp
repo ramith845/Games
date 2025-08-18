@@ -16,11 +16,6 @@ GameLevel::GameLevel()
 GameLevel::~GameLevel()
 {
 	// std::println("[GameLevel] Cleaning and deleting resources...");
-	for (auto* entity : m_Entities)
-	{
-		// std::println("\t- deleting object: {}", entity->GetID());
-		delete entity;
-	}
 	m_Entities.clear();
 	// std::println("[GameLevel] Cleaned up.");
 }
@@ -167,7 +162,7 @@ void GameLevel::Init(std::vector<std::vector<int>> tileData, unsigned int lvlWid
 			}
 
 			pos = glm::vec2(x * size.x, y * size.y);
-			m_Entities.push_back(new GameObject(pos, size, GET_TEXTURE(textureName), objType, color, glm::vec2(0.f), 0.f));
+			m_Entities.push_back(GameObject(pos, size, GET_TEXTURE(textureName), objType, color, glm::vec2(0.f), 0.f));
 
 			x++;
 		}
@@ -186,19 +181,19 @@ void GameLevel::Draw(SpriteRenderer* renderer)
 {
 	for (const auto& ent : m_Entities)
 #ifndef BRICK_DEBUG  
-		if (ent->m_Alive)
+		if (ent.m_Alive)
 #endif
 			renderer->DrawSprite(
-				ent->m_Texture, ent->GetPos(),
-				ent->m_Rotation, ent->m_Size,
-				ent->m_Color, true
+				ent.m_Texture, ent.GetPos(),
+				ent.m_Rotation, ent.m_Size,
+				ent.m_Color, true
 #ifdef BRICK_DEBUG  
 				, ent->m_Hit
 #endif
 			);
 }
 
-std::vector<GameObject*>& GameLevel::GetEnt()
+std::vector<GameObject>& GameLevel::GetEnt()
 {
 	return m_Entities;
 }

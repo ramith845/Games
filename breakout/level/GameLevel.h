@@ -23,8 +23,8 @@ public:
 	bool IsCompleted();
 	void LoadLevel(const char* file, unsigned int lvlWidth, unsigned int lvlHeight);
 	void Init(std::vector<std::vector<int>> tileData, unsigned int lvlWidth, unsigned int lvlHeight);
-	std::vector<GameObject*>& GetEnt();
+	std::vector<GameObject>& GetEnt();
 private:
-	std::vector<GameObject*> m_Entities{};
+	std::vector<GameObject> m_Entities{};
 };
 

@@ -3,7 +3,7 @@
 #include "object/GameObject.h"
 #include "object/BallObject.h"
 
-void CollisionManager::SetVertices(GameObject& obj, std::vector<glm::vec2>& verts)
+void CollisionManager::SetVertices(const GameObject& obj, std::vector<glm::vec2>& verts)
 {
 	BoundinBox bb{ obj.m_bb };
 	verts.clear();
@@ -32,7 +32,7 @@ void CollisionManager::GetAxes(std::vector<glm::vec2>& verts)
 	}
 }
 
-void CollisionManager::AddCircleAxis(GameObject& circleObj, GameObject& rectObj)
+void CollisionManager::AddCircleAxis(const GameObject& circleObj, const GameObject& rectObj)
 {
 	if (circleObj.GetType() != ObjectType::Ball)
 		return;
@@ -51,7 +51,7 @@ void set_min_max(MinMax& minMax, float value)
 	minMax.max = std::max(minMax.max, value);
 }
 
-void CollisionManager::ProjectOntoAxis(GameObject& objA, GameObject& objB)
+void CollisionManager::ProjectOntoAxis(const GameObject& objA, const GameObject& objB)
 {
 	for (const auto& axis : m_Axes)
 	{
@@ -117,9 +117,9 @@ glm::vec2 CollisionManager::FindMinTranslationVector(glm::vec2 d)
 	return mtv;
 }
 
-void ObjectMoveByMTV(glm::vec2 mtv, GameObject& movable_obj)
+void ObjectMoveByMTV(glm::vec2 mtv, CollisionManager::MovableObj_t& movable_obj)
 {
-	movable_obj.SetPos(movable_obj.GetPos() + mtv); // apply MTV to the movable object
+	movable_obj->get().SetPos(movable_obj->get().GetPos() + mtv); // apply MTV to the movable object
 }
 
 bool check_overlap(const CollisionManager::Overlap_t& overlap)
@@ -143,7 +143,7 @@ bool CollisionManager::ProcessProjections(bool isOverlapping)
 	return isOverlapping;
 }
 
-void CollisionManager::ResolveCollision(GameObject& objA, GameObject& objB, MovableObj_t& movable_obj, glm::vec2& mtv, const bool isOverlapping)
+void CollisionManager::ResolveCollision(const GameObject& objA, const GameObject& objB, MovableObj_t& movable_obj, glm::vec2& mtv, const bool isOverlapping)
 {
 	glm::vec2 dir{ objB.GetCenter() - objA.GetCenter() };
 	if (isOverlapping)
@@ -151,26 +151,26 @@ void CollisionManager::ResolveCollision(GameObject& objA, GameObject& objB, Mova
 		if (movable_obj && &movable_obj->get() == &objB)
 		{
 			mtv = FindMinTranslationVector(dir);
-			ObjectMoveByMTV(mtv, objB);
+			ObjectMoveByMTV(mtv, movable_obj);
 			std::println("[COLLISION DETECTED] vec2( {}, {} )", mtv.x, mtv.y);
 		}
 		else if (movable_obj && &movable_obj->get() == &objA)
 		{
 			mtv = FindMinTranslationVector(-dir);
-			ObjectMoveByMTV(mtv, objA);
+			ObjectMoveByMTV(mtv, movable_obj);
 			std::println("[COLLISION DETECTED] vec2( {}, {} )", mtv.x, mtv.y);
 		}
-		else if (mtv != glm::vec2(0.f))
+		/*else if (mtv != glm::vec2(0.f))
 		{
 			ObjectMoveByMTV(mtv / 2.0f, objB);
 			ObjectMoveByMTV(-mtv / 2.0f, objA);
-		}
+		}*/
 	}
 	movable_obj = std::nullopt;
 }
 
 CollisionManager::SATResult_t
-CollisionManager::SATCollisionTest(GameObject& objA, GameObject& objB, MovableObj_t& movable_obj)
+CollisionManager::SATCollisionTest(const GameObject& objA, const GameObject& objB, MovableObj_t movable_obj)
 {
 	m_Axes.clear();
 	m_Projections.clear();
